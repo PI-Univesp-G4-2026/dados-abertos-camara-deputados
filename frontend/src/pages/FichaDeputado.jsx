@@ -8,7 +8,12 @@ import { obterDeputado, resumoDespesas, resumoVotosDeputado, listarVotosDeputado
 
 import RaioXVotacao from "./RaioXVotacao.jsx";
 
-const COLORS = ['#16a34a', '#dc2626', '#ca8a04', '#64748b'] // Verde (Sim), Vermelho (Não), Amarelo (Abstenção), Cinza (Outros)
+const getCorVoto = (tipoVoto) => {
+    if (tipoVoto === 'Sim') return '#16a34a';      // Verde
+    if (tipoVoto === 'Não') return '#dc2626';      // Vermelho
+    if (tipoVoto === 'Abstenção') return '#ca8a04'; // Amarelo
+    return '#64748b';                              // Cinza (Outros)
+}
 
 export default function FichaDeputado() {
     const { id } = useParams()
@@ -100,7 +105,7 @@ export default function FichaDeputado() {
                                 <PieChart>
                                     <Pie data={dadosPizza} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
                                         {dadosPizza.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            <Cell key={`cell-${index}`} fill={getCorVoto(entry.name)} />
                                         ))}
                                     </Pie>
                                     <Tooltip />
