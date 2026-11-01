@@ -4,10 +4,6 @@ package br.com.univesp.camara.controller;
 
 import br.com.univesp.camara.client.CamaraClient;
 import br.com.univesp.camara.etl.*;
-import br.com.univesp.camara.etl.EtlService;
-import br.com.univesp.camara.etl.TemaEtlService;
-import br.com.univesp.camara.etl.VotacaoEtlService;
-import br.com.univesp.camara.etl.VotoEtlService;
 import br.com.univesp.camara.model.OrientacaoBancada;
 import br.com.univesp.camara.model.Proposicao;
 import br.com.univesp.camara.model.Votacao;
@@ -20,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.Year;
+import java.util.List; // <--- IMPORT ADICIONADO AQUI
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -41,12 +38,14 @@ public class AdminController {
     private final VotacaoRepository votacaoRepo;
     private final OrientacaoBancadaRepository orientacaoRepo;
 
-    // CONSTRUTOR ATUALIZADO
+    // CONSTRUTOR ATUALIZADO COM OS SERVIÇOS DO MERGE
     public AdminController(EtlService etlService,
                            CamaraClient camaraClient,
                            VotacaoEtlService votacaoEtlService,
                            VotoEtlService votoEtlService,
                            TemaEtlService temaEtlService,
+                           LegislaturaEtlService legislaturaEtlService, // <--- ADICIONADO
+                           PartidoEtlService partidoEtlService,         // <--- ADICIONADO
                            ProposicaoRepository proposicaoRepo,
                            VotacaoRepository votacaoRepo,
                            OrientacaoBancadaRepository orientacaoRepo) {
@@ -55,6 +54,8 @@ public class AdminController {
         this.votacaoEtlService = votacaoEtlService;
         this.votoEtlService = votoEtlService;
         this.temaEtlService = temaEtlService;
+        this.legislaturaEtlService = legislaturaEtlService; // <--- INICIALIZADO
+        this.partidoEtlService = partidoEtlService;         // <--- INICIALIZADO
         this.proposicaoRepo = proposicaoRepo;
         this.votacaoRepo = votacaoRepo;
         this.orientacaoRepo = orientacaoRepo;
