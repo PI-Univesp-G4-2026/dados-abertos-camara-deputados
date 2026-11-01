@@ -144,10 +144,38 @@ public class CamaraClient {
         return buscarSeguindoLinks(url, d -> d.path("id").asLong());
     }
 
+    public record LegislaturaApi(int id, LocalDate dataInicio, LocalDate dataFim){}
+
+    public List<LegislaturaApi> buscarLegislaturas(){
+        return buscarPaginado(baseUrl + "/legislaturas?itens=100", this::paraLegislatura);
+    }
+
+    private LegislaturaApi paraLegislatura(JsonNode d){
+        String dataStrInicio = textOrNull(d, "dataInicio");
+        String dataStrFim = textOrNull(d, "dataFim");
+        return new LegislaturaApi(
+                Integer.parseInt(d.path("id").asText()),
+                dataStrInicio != null ? LocalDate.parse(dataStrInicio) : null,
+                dataStrFim != null ? LocalDate.parse(dataStrFim) : null);
+    }
+
+    public record PartidoApi(int id, String sigla, String nome){}
+
+    public List<PartidoApi> buscarPartidos(){
+        return buscarPaginado(baseUrl + "/partidos?itens=100", this::paraPartido);
+    }
+
+    private PartidoApi paraPartido(JsonNode d){
+        return new PartidoApi(
+                d.path("id").asInt(),
+                textOrNull(d, "sigla"),
+                textOrNull(d, "nome")
+        );
+    }
     // =========================================================================
     // MÉTODOS DE BUSCA COM RETRY E PAGINAÇÃO
     // =========================================================================
-
+    //Buscador refatorado
     private <T> List<T> buscarPaginado(String urlBase, Function<JsonNode, T> conversor) {
         List<T> resultado = new ArrayList<>();
         int pagina = 1;

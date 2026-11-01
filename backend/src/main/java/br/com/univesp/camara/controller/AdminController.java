@@ -3,6 +3,7 @@
 package br.com.univesp.camara.controller;
 
 import br.com.univesp.camara.client.CamaraClient;
+import br.com.univesp.camara.etl.*;
 import br.com.univesp.camara.etl.EtlService;
 import br.com.univesp.camara.etl.TemaEtlService;
 import br.com.univesp.camara.etl.VotacaoEtlService;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.Year;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,6 +33,8 @@ public class AdminController {
     private final VotacaoEtlService votacaoEtlService;
     private final VotoEtlService votoEtlService;
     private final TemaEtlService temaEtlService;
+    private final LegislaturaEtlService legislaturaEtlService;
+    private final PartidoEtlService partidoEtlService;
 
     // NOVAS DEPENDÊNCIAS INJETADAS
     private final ProposicaoRepository proposicaoRepo;
@@ -123,6 +125,18 @@ public class AdminController {
         CompletableFuture.runAsync(temaEtlService::sincronizarProposicoesTemas);
         return ResponseEntity.accepted().body(Map.of(
                 "status", "iniciado", "mensagem", "Sincronização de temas e proposicoes temas iniciada."));
+    }
+
+    @PostMapping("/etl/legislaturas")
+    public ResponseEntity<Map<String, Object>> sincronizarLegislaturas(){
+        legislaturaEtlService.sincronizarLegislaturas();
+        return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Legislaturas sincronizadas"));
+    }
+
+    @PostMapping("/etl/partidos")
+    public ResponseEntity<Map<String, Object>> sincronizarPartidos(){
+        partidoEtlService.sincronizarPartidos();
+        return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Partidos sincronizados"));
     }
 
     @PostMapping("/etl/tudo")

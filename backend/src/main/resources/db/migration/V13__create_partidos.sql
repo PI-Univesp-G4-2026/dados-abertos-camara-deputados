@@ -1,0 +1,6 @@
+CREATE TABLE partidos(
+    id INTEGER PRIMARY KEY,
+    sigla VARCHAR(30) NOT NULL,
+    nome VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
