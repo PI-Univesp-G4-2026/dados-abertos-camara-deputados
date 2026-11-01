@@ -3,17 +3,13 @@
 package br.com.univesp.camara.controller;
 
 import br.com.univesp.camara.client.CamaraClient;
-import br.com.univesp.camara.etl.EtlService;
-import br.com.univesp.camara.etl.TemaEtlService;
-import br.com.univesp.camara.etl.VotacaoEtlService;
-import br.com.univesp.camara.etl.VotoEtlService;
+import br.com.univesp.camara.etl.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.Year;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -27,13 +23,17 @@ public class AdminController {
     private final VotacaoEtlService votacaoEtlService;
     private final VotoEtlService votoEtlService;
     private final TemaEtlService temaEtlService;
+    private final LegislaturaEtlService legislaturaEtlService;
+    private final PartidoEtlService partidoEtlService;
 
-    public AdminController(EtlService etlService, CamaraClient camaraClient, VotacaoEtlService votacaoEtlService, VotoEtlService votoEtlService, TemaEtlService temaEtlService) {
+    public AdminController(EtlService etlService, CamaraClient camaraClient, VotacaoEtlService votacaoEtlService, VotoEtlService votoEtlService, TemaEtlService temaEtlService, LegislaturaEtlService legislaturaEtlService, PartidoEtlService partidoEtlService) {
         this.etlService = etlService;
         this.camaraClient = camaraClient;
         this.votacaoEtlService = votacaoEtlService;
         this.votoEtlService = votoEtlService;
         this.temaEtlService = temaEtlService;
+        this.legislaturaEtlService = legislaturaEtlService;
+        this.partidoEtlService = partidoEtlService;
     }
 
     @PostMapping("/etl/deputados")
@@ -103,8 +103,20 @@ public class AdminController {
         CompletableFuture.runAsync(temaEtlService::sincronizarTemas);
         CompletableFuture.runAsync(temaEtlService::sincronizarProposicoesTemas);
         return ResponseEntity.accepted().body(Map.of(
-                "status", "iniciado", "mensagem", "Sincronização de temas e proposicoes temas iniciada."));
+                "status", "iniciado", "mensagem", "Temas e proposicoes temas sincronizadas"));
 
+    }
+
+    @PostMapping("/etl/legislaturas")
+    public ResponseEntity<Map<String, Object>> sincronizarLegislaturas(){
+        legislaturaEtlService.sincronizarLegislaturas();
+        return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Legislaturas sincronizadas"));
+    }
+
+    @PostMapping("/etl/partidos")
+    public ResponseEntity<Map<String, Object>> sincronizarPartidos(){
+        partidoEtlService.sincronizarPartidos();
+        return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Partidos sincronizados"));
     }
 
     @PostMapping("/etl/tudo")
