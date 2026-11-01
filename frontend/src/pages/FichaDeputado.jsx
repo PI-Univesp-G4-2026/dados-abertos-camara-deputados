@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
     LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts'
 import { obterDeputado, resumoDespesas, resumoVotosDeputado, listarVotosDeputado } from '../services/api'
+
+import RaioXVotacao from "./RaioXVotacao.jsx";
 
 const COLORS = ['#16a34a', '#dc2626', '#ca8a04', '#64748b'] // Verde (Sim), Vermelho (Não), Amarelo (Abstenção), Cinza (Outros)
 
@@ -19,6 +21,9 @@ export default function FichaDeputado() {
     // Estados de Votações
     const [resumoVotos, setResumoVotos] = useState(null)
     const [ultimosVotos, setUltimosVotos] = useState([])
+
+    // Estado para controlar qual linha da tabela está expandida
+    const [votoExpandido, setVotoExpandido] = useState(null)
 
     const [erro, setErro] = useState(null)
 
@@ -107,25 +112,44 @@ export default function FichaDeputado() {
                 )}
 
                 <h3>Últimos Votos Registrados</h3>
+                <p style={{ fontSize: '0.9rem', color: '#666' }}>Clique em uma linha para ver o Raio-X da votação.</p>
+
                 {ultimosVotos.length > 0 ? (
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                             <thead>
-                            <tr style={{ borderBottom: '2px solid #ccc' }}>
-                                <th style={{ padding: '8px' }}>Data</th>
-                                <th style={{ padding: '8px' }}>Descrição</th>
-                                <th style={{ padding: '8px' }}>Voto</th>
+                            <tr style={{ borderBottom: '2px solid #ccc', backgroundColor: '#f8fafc' }}>
+                                <th style={{ padding: '12px 8px' }}>Data</th>
+                                <th style={{ padding: '12px 8px' }}>Descrição</th>
+                                <th style={{ padding: '12px 8px' }}>Voto</th>
                             </tr>
                             </thead>
                             <tbody>
                             {ultimosVotos.map(v => (
-                                <tr key={v.votacaoId} style={{ borderBottom: '1px solid #eee' }}>
-                                    <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{v.dataVotacao}</td>
-                                    <td style={{ padding: '8px' }}>{v.descricao}</td>
-                                    <td style={{ padding: '8px', fontWeight: 'bold', color: v.tipoVoto === 'Sim' ? '#16a34a' : v.tipoVoto === 'Não' ? '#dc2626' : '#ca8a04' }}>
-                                        {v.tipoVoto}
-                                    </td>
-                                </tr>
+                                <Fragment key={v.votacaoId}>
+                                    <tr
+                                        onClick={() => setVotoExpandido(votoExpandido === v.votacaoId ? null : v.votacaoId)}
+                                        style={{
+                                            borderBottom: '1px solid #eee',
+                                            cursor: 'pointer',
+                                            backgroundColor: votoExpandido === v.votacaoId ? '#eff6ff' : 'transparent'
+                                        }}
+                                    >
+                                        <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{v.dataVotacao}</td>
+                                        <td style={{ padding: '8px' }}>{v.descricao}</td>
+                                        <td style={{ padding: '8px', fontWeight: 'bold', color: v.tipoVoto === 'Sim' ? '#16a34a' : v.tipoVoto === 'Não' ? '#dc2626' : '#ca8a04' }}>
+                                            {v.tipoVoto}
+                                        </td>
+                                    </tr>
+                                    {/* Renderiza o Raio-X se a linha estiver expandida */}
+                                    {votoExpandido === v.votacaoId && (
+                                        <tr>
+                                            <td colSpan="3" style={{ padding: 0 }}>
+                                                <RaioXVotacao votacaoId={v.votacaoId} deputadoId={id} />
+                                            </td>
+                                        </tr>
+                                    )}
+                                </Fragment>
                             ))}
                             </tbody>
                         </table>

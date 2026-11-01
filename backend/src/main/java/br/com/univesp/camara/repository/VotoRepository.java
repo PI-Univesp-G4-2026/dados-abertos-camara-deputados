@@ -34,4 +34,7 @@ public interface VotoRepository extends JpaRepository<Voto, Long> {
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("DELETE FROM Voto v WHERE v.votacao.id = :votacaoId")
     void deleteByVotacaoId(@Param("votacaoId") String votacaoId);
+
+    // Busca o voto de um deputado específico em uma votação específica
+    List<Voto> findByVotacaoIdAndDeputadoId(String votacaoId, Long deputadoId);
 }

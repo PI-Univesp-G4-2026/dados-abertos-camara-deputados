@@ -11,6 +11,9 @@ Plataforma web desenvolvida para monitorar, de forma centralizada e acessível, 
 
 Este projeto foi desenvolvido como parte do **Projeto Integrador II** da UNIVESP, pelo **Grupo 20** — 2026/2.
 
+## 🌐 Acesso em Produção
+- **Frontend (Vercel):** [https://dados-abertos-camara-deputados.vercel.app)
+- **API (Render):** [https://camara-api.onrender.com/api/deputados](https://camara-api.onrender.com/api/deputados)
 ---
 
 ## 🎯 Objetivo

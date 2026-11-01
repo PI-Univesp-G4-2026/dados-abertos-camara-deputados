@@ -7,6 +7,7 @@ import br.com.univesp.camara.etl.EtlService;
 import br.com.univesp.camara.etl.TemaEtlService;
 import br.com.univesp.camara.etl.VotacaoEtlService;
 import br.com.univesp.camara.etl.VotoEtlService;
+import br.com.univesp.camara.model.Proposicao;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -113,5 +114,20 @@ public class AdminController {
         return ResponseEntity.accepted().body(Map.of(
                 "status", "iniciado",
                 "mensagem", "Sincronização de deputados, votações, votos e despesas iniciada. Acompanhe pelo log."));
+    }
+
+    @PostMapping("/etl/proposicao/{id}")
+    public ResponseEntity<?> sincronizarProposicao(@PathVariable Long id) {
+        Proposicao p = camaraClient.buscarProposicao(id);
+        proposicaoRepo.save(p);
+        return ResponseEntity.ok("Proposição salva: " + p.getEmenta());
+    }
+
+    @PostMapping("/etl/votacao/{id}/orientacoes")
+    public ResponseEntity<?> sincronizarOrientacoes(@PathVariable String id) {
+        Votacao v = votacaoRepo.findById(id).orElseThrow();
+        List<OrientacaoBancada> list = camaraClient.buscarOrientacoes(id, v);
+        orientacaoRepo.saveAll(list);
+        return ResponseEntity.ok(list.size() + " orientações salvas.");
     }
 }
