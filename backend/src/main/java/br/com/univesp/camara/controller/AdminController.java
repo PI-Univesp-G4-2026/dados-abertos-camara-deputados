@@ -4,6 +4,16 @@ package br.com.univesp.camara.controller;
 
 import br.com.univesp.camara.client.CamaraClient;
 import br.com.univesp.camara.etl.*;
+import br.com.univesp.camara.etl.EtlService;
+import br.com.univesp.camara.etl.TemaEtlService;
+import br.com.univesp.camara.etl.VotacaoEtlService;
+import br.com.univesp.camara.etl.VotoEtlService;
+import br.com.univesp.camara.model.OrientacaoBancada;
+import br.com.univesp.camara.model.Proposicao;
+import br.com.univesp.camara.model.Votacao;
+import br.com.univesp.camara.repository.OrientacaoBancadaRepository;
+import br.com.univesp.camara.repository.ProposicaoRepository;
+import br.com.univesp.camara.repository.VotacaoRepository;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class AdminController {
 
     private final EtlService etlService;
@@ -26,14 +36,28 @@ public class AdminController {
     private final LegislaturaEtlService legislaturaEtlService;
     private final PartidoEtlService partidoEtlService;
 
-    public AdminController(EtlService etlService, CamaraClient camaraClient, VotacaoEtlService votacaoEtlService, VotoEtlService votoEtlService, TemaEtlService temaEtlService, LegislaturaEtlService legislaturaEtlService, PartidoEtlService partidoEtlService) {
+    // NOVAS DEPENDÊNCIAS INJETADAS
+    private final ProposicaoRepository proposicaoRepo;
+    private final VotacaoRepository votacaoRepo;
+    private final OrientacaoBancadaRepository orientacaoRepo;
+
+    // CONSTRUTOR ATUALIZADO
+    public AdminController(EtlService etlService,
+                           CamaraClient camaraClient,
+                           VotacaoEtlService votacaoEtlService,
+                           VotoEtlService votoEtlService,
+                           TemaEtlService temaEtlService,
+                           ProposicaoRepository proposicaoRepo,
+                           VotacaoRepository votacaoRepo,
+                           OrientacaoBancadaRepository orientacaoRepo) {
         this.etlService = etlService;
         this.camaraClient = camaraClient;
         this.votacaoEtlService = votacaoEtlService;
         this.votoEtlService = votoEtlService;
         this.temaEtlService = temaEtlService;
-        this.legislaturaEtlService = legislaturaEtlService;
-        this.partidoEtlService = partidoEtlService;
+        this.proposicaoRepo = proposicaoRepo;
+        this.votacaoRepo = votacaoRepo;
+        this.orientacaoRepo = orientacaoRepo;
     }
 
     @PostMapping("/etl/deputados")
@@ -64,20 +88,17 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Despesas de todos os deputados sincronizadas."));
     }
 
-    //curl.exe -X POST http://localhost:8080/api/admin/etl/votacoes pra carregar votacoes
     @PostMapping("/etl/votacoes")
     public ResponseEntity<Map<String, Object>> sincronizarVotacoes(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
                                                                    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
         LocalDate de = (inicio != null) ? inicio : votacaoEtlService.pontoDePartida();
         LocalDate ate = (fim != null) ? fim : LocalDate.now();
 
-
         if (de.isAfter(ate)) {
             return ResponseEntity.badRequest().body(Map.of("status", "erro", "mensagem", "A data inicial não pode ser posterior à final."));
         }
         votacaoEtlService.sincronizarVotacoes(de, ate);
         return ResponseEntity.ok(Map.of("status", "ok", "inicio", de.toString(), "fim", ate.toString(), "mensagem", "Votações sincronizadas."));
-
     }
 
     @PostMapping("/etl/votos")
@@ -103,8 +124,7 @@ public class AdminController {
         CompletableFuture.runAsync(temaEtlService::sincronizarTemas);
         CompletableFuture.runAsync(temaEtlService::sincronizarProposicoesTemas);
         return ResponseEntity.accepted().body(Map.of(
-                "status", "iniciado", "mensagem", "Temas e proposicoes temas sincronizadas"));
-
+                "status", "iniciado", "mensagem", "Sincronização de temas e proposicoes temas iniciada."));
     }
 
     @PostMapping("/etl/legislaturas")
@@ -125,5 +145,22 @@ public class AdminController {
         return ResponseEntity.accepted().body(Map.of(
                 "status", "iniciado",
                 "mensagem", "Sincronização de deputados, votações, votos e despesas iniciada. Acompanhe pelo log."));
+    }
+
+    // --- NOVOS ENDPOINTS DO RAIO-X ---
+
+    @PostMapping("/etl/proposicao/{id}")
+    public ResponseEntity<Map<String, Object>> sincronizarProposicao(@PathVariable Long id) {
+        Proposicao p = camaraClient.buscarProposicao(id);
+        proposicaoRepo.save(p);
+        return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Proposição salva: " + p.getEmenta()));
+    }
+
+    @PostMapping("/etl/votacao/{id}/orientacoes")
+    public ResponseEntity<Map<String, Object>> sincronizarOrientacoes(@PathVariable String id) {
+        Votacao v = votacaoRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("Votação não encontrada: " + id));
+        List<OrientacaoBancada> list = camaraClient.buscarOrientacoes(id, v);
+        orientacaoRepo.saveAll(list);
+        return ResponseEntity.ok(Map.of("status", "ok", "mensagem", list.size() + " orientações salvas."));
     }
 }

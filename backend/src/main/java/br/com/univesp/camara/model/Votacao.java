@@ -53,6 +53,10 @@ public class Votacao {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "proposicao_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private Proposicao proposicao;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
@@ -161,4 +165,6 @@ public class Votacao {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+
 }

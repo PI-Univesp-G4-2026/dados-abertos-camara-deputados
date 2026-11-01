@@ -313,4 +313,41 @@ public class CamaraClient {
             return null;
         }
     }
+
+    public Proposicao buscarProposicao(Long id) {
+        String url = baseUrl + "/proposicoes/" + id;
+        try {
+            String json = fazerRequisicaoComRetry(url);
+            JsonNode root = mapper.readTree(json).get("dados");
+            Proposicao p = new Proposicao();
+            p.setId(root.get("id").asLong());
+            p.setSiglaTipo(textOrNull(root, "siglaTipo"));
+            p.setNumero(root.path("numero").asInt());
+            p.setAno(root.path("ano").asInt());
+            p.setEmenta(textOrNull(root, "ementa"));
+            p.setUrlInteiroTeor(textOrNull(root, "urlInteiroTeor"));
+            return p;
+        } catch (Exception e) {
+            throw new IllegalStateException("Erro ao buscar proposição " + id, e);
+        }
+    }
+
+    public List<OrientacaoBancada> buscarOrientacoes(String votacaoId, Votacao votacao) {
+        String url = baseUrl + "/votacoes/" + votacaoId + "/orientacoes";
+        List<OrientacaoBancada> list = new ArrayList<>();
+        try {
+            String json = fazerRequisicaoComRetry(url);
+            JsonNode dados = mapper.readTree(json).get("dados");
+            for (JsonNode d : dados) {
+                OrientacaoBancada o = new OrientacaoBancada();
+                o.setVotacao(votacao);
+                o.setSiglaPartidoBloco(textOrNull(d, "siglaPartidoBloco"));
+                o.setOrientacaoVoto(textOrNull(d, "orientacaoVoto"));
+                list.add(o);
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao buscar orientações: " + e.getMessage());
+        }
+        return list;
+    }
 }
