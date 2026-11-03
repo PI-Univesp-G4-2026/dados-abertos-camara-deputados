@@ -32,6 +32,7 @@ public class AdminController {
     private final TemaEtlService temaEtlService;
     private final LegislaturaEtlService legislaturaEtlService;
     private final PartidoEtlService partidoEtlService;
+    private final ProposicaoEtlService proposicaoEtlService;
 
     // NOVAS DEPENDÊNCIAS INJETADAS
     private final ProposicaoRepository proposicaoRepo;
@@ -45,7 +46,7 @@ public class AdminController {
                            VotoEtlService votoEtlService,
                            TemaEtlService temaEtlService,
                            LegislaturaEtlService legislaturaEtlService, // <--- ADICIONADO
-                           PartidoEtlService partidoEtlService,         // <--- ADICIONADO
+                           PartidoEtlService partidoEtlService, ProposicaoEtlService proposicaoEtlService,         // <--- ADICIONADO
                            ProposicaoRepository proposicaoRepo,
                            VotacaoRepository votacaoRepo,
                            OrientacaoBancadaRepository orientacaoRepo) {
@@ -56,6 +57,7 @@ public class AdminController {
         this.temaEtlService = temaEtlService;
         this.legislaturaEtlService = legislaturaEtlService; // <--- INICIALIZADO
         this.partidoEtlService = partidoEtlService;         // <--- INICIALIZADO
+        this.proposicaoEtlService = proposicaoEtlService;
         this.proposicaoRepo = proposicaoRepo;
         this.votacaoRepo = votacaoRepo;
         this.orientacaoRepo = orientacaoRepo;
@@ -138,6 +140,29 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> sincronizarPartidos(){
         partidoEtlService.sincronizarPartidos();
         return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Partidos sincronizados"));
+    }
+
+    @PostMapping("/etl/proposicoes")
+    public ResponseEntity<Map<String, Object>> sincronizarProposicoes(@RequestParam(defaultValue = "200") int limite){
+        proposicaoEtlService.sincronizarDados(limite);
+        return ResponseEntity.ok(Map.of("status", "ok", "limite", limite));
+    }
+
+    @PostMapping("/etl/proposicoes/autores")
+    public ResponseEntity<Map<String, Object>> sincronizarProposicaoAutores(@RequestParam(defaultValue = "10") int limite){
+        proposicaoEtlService.sincronizarAutores(limite);
+        return ResponseEntity.ok(Map.of("status", "ok", "limite", limite));
+    }
+
+    @PostMapping("/etl/proposicoes/autores/tudo")
+    public ResponseEntity<Map<String, Object>> sincronizarTodasProposicaoAutores(){
+        CompletableFuture
+                .runAsync(() -> proposicaoEtlService.sincronizarAutores(2000))
+                .exceptionally(e -> {
+                    System.err.println(">>> ETL proposicao autores: erro inesperado: " + e.getMessage());
+                    return null;
+                });
+        return ResponseEntity.accepted().body(Map.of("status", "iniciado", "mensagem", "Sincronizando proposição autores."));
     }
 
     @PostMapping("/etl/tudo")

@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class CamaraClient {
@@ -140,17 +141,18 @@ public class CamaraClient {
     }
 
     public List<Long> buscarProposicoesDoTema(int cod) {
-        String url = baseUrl + "/proposicoes?codTema=" + cod + "&itens=100" ;
+        String url = baseUrl + "/proposicoes?codTema=" + cod + "&itens=100";
         return buscarSeguindoLinks(url, d -> d.path("id").asLong());
     }
 
-    public record LegislaturaApi(int id, LocalDate dataInicio, LocalDate dataFim){}
+    public record LegislaturaApi(int id, LocalDate dataInicio, LocalDate dataFim) {
+    }
 
-    public List<LegislaturaApi> buscarLegislaturas(){
+    public List<LegislaturaApi> buscarLegislaturas() {
         return buscarPaginado(baseUrl + "/legislaturas?itens=100", this::paraLegislatura);
     }
 
-    private LegislaturaApi paraLegislatura(JsonNode d){
+    private LegislaturaApi paraLegislatura(JsonNode d) {
         String dataStrInicio = textOrNull(d, "dataInicio");
         String dataStrFim = textOrNull(d, "dataFim");
         return new LegislaturaApi(
@@ -159,19 +161,66 @@ public class CamaraClient {
                 dataStrFim != null ? LocalDate.parse(dataStrFim) : null);
     }
 
-    public record PartidoApi(int id, String sigla, String nome){}
+    public record PartidoApi(int id, String sigla, String nome) {
+    }
 
-    public List<PartidoApi> buscarPartidos(){
+    public List<PartidoApi> buscarPartidos() {
         return buscarPaginado(baseUrl + "/partidos?itens=100", this::paraPartido);
     }
 
-    private PartidoApi paraPartido(JsonNode d){
+    private PartidoApi paraPartido(JsonNode d) {
         return new PartidoApi(
                 d.path("id").asInt(),
                 textOrNull(d, "sigla"),
                 textOrNull(d, "nome")
         );
     }
+
+    public record ProposicaoApi(Long id, String siglaTipo, Integer codTipo, Integer numero, Integer ano, String ementa,
+                                LocalDateTime dataApresentacao) {
+    }
+
+    public List<ProposicaoApi> buscarProposicoes(List<Long> ids) {
+        if (ids.size() > 90){
+            throw new IllegalArgumentException("Máximo de 90 ids por requisição (recebi " + ids.size() + ")");
+        }
+        String parametros = ids.stream().map(id -> "id=" + id).collect(Collectors.joining("&"));
+        String url = baseUrl + "/proposicoes?" + parametros + "&itens=100";
+        return buscarSemPaginacao(url, this::paraProposicao);
+    }
+
+    private ProposicaoApi paraProposicao(JsonNode d) {
+        String dataStrApresentacao = textOrNull(d, "dataApresentacao");
+        return new ProposicaoApi(
+                d.path("id").asLong(),
+                textOrNull(d, "siglaTipo"),
+                d.hasNonNull("codTipo") ? d.get("codTipo").asInt() : null,
+                d.hasNonNull("numero") ? d.get("numero").asInt() : null,
+                d.hasNonNull("ano") ? d.get("ano").asInt() : null,
+                textOrNull(d, "ementa"),
+                dataStrApresentacao != null ? LocalDateTime.parse(dataStrApresentacao) : null);
+    }
+
+    public record ProposicaoAutorApi(String nome, String uri, Integer codTipo, String tipo, Integer ordemAssinatura,
+                                     Integer proponente) {
+    }
+
+    public List<ProposicaoAutorApi> buscarProposicaoAutores(long proposicaoId) {
+        String url = baseUrl + "/proposicoes/" + proposicaoId + "/autores";
+        return buscarSemPaginacao(url, this::paraProposicaoAutor);
+    }
+
+    private ProposicaoAutorApi paraProposicaoAutor(JsonNode d) {
+       return new ProposicaoAutorApi(
+               textOrNull(d, "nome"),
+               textOrNull(d, "uri"),
+               d.hasNonNull("codTipo") ? d.get("codTipo").asInt() : null,
+               textOrNull(d, "tipo"),
+               d.hasNonNull("ordemAssinatura") ? d.get("ordemAssinatura").asInt() : null,
+               d.hasNonNull("proponente") ? d.get("proponente").asInt() : null
+       );
+    }
+
     // =========================================================================
     // MÉTODOS DE BUSCA COM RETRY E PAGINAÇÃO
     // =========================================================================
@@ -234,21 +283,21 @@ public class CamaraClient {
         return resultado;
     }
 
-    private <T> List<T> buscarSeguindoLinks(String urlInicial, Function<JsonNode, T> conversor){
+    private <T> List<T> buscarSeguindoLinks(String urlInicial, Function<JsonNode, T> conversor) {
         List<T> resultado = new ArrayList<>();
         String url = urlInicial;
         int paginas = 0;
 
-        while (url != null && paginas < 1000){
+        while (url != null && paginas < 1000) {
             try {
                 String json = fazerRequisicaoComRetry(url);
                 JsonNode root = mapper.readTree(json);
-                for (JsonNode item : root.path("dados")){
+                for (JsonNode item : root.path("dados")) {
                     resultado.add(conversor.apply(item));
                 }
                 String proxima = null;
-                for (JsonNode link : root.path("links")){
-                    if ("next".equals(link.path("rel").asText())){
+                for (JsonNode link : root.path("links")) {
+                    if ("next".equals(link.path("rel").asText())) {
                         proxima = link.path("href").asText(null);
                         break;
                     }
@@ -259,7 +308,7 @@ public class CamaraClient {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
-            } catch (Exception e){
+            } catch (Exception e) {
                 throw new IllegalStateException("Erro ao buscar " + url + ": " + e.getMessage(), e);
             }
         }
