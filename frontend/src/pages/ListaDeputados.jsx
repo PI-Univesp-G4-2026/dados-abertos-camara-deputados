@@ -52,7 +52,25 @@ export default function ListaDeputados() {
 
     return (
         <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-            <h1>Deputados Federais</h1>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <h1 style={{ margin: 0 }}>Deputados Federais</h1>
+                <Link
+                    to="/partidos"
+                    style={{
+                        backgroundColor: '#2563eb',
+                        color: 'white',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '4px',
+                        textDecoration: 'none',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem',
+                        display: 'inline-block'
+                    }}
+                >
+                    Ver Painel de Partidos →
+                </Link>
+            </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <form
