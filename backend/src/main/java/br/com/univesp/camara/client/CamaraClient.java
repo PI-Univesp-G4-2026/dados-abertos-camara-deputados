@@ -11,10 +11,12 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 
 @Component
 public class CamaraClient {
@@ -35,6 +37,9 @@ public class CamaraClient {
         this.restTemplate = new RestTemplate(factory);
     }
 
+    private static final DateTimeFormatter FORMATTER_SEM_SEGUNDOS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+
+
     public List<Deputado> buscarDeputados() {
         String url = baseUrl + "/deputados?idLegislatura=" + legislaturaAtual + "&itens=100&ordem=ASC&ordenarPor=nome";
         return buscarPaginado(url, this::paraDeputado);
@@ -52,7 +57,7 @@ public class CamaraClient {
         String dataStr = textOrNull(d, "dataHora");
         return new HistoricoApi(
                 d.hasNonNull("idLegislatura") ? d.get("idLegislatura").asInt() : null,
-                dataStr != null ? LocalDateTime.parse(dataStr) : null,
+                dataStr != null ? LocalDateTime.parse(dataStr, FORMATTER_SEM_SEGUNDOS) : null,
                 textOrNull(d, "situacao")
         );
     }
