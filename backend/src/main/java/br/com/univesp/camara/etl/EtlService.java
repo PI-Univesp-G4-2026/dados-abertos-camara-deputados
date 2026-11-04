@@ -66,10 +66,36 @@ public class EtlService {
 
     @Transactional
     public void sincronizarDeputados() {
-        System.out.println(">>> ETL: sincronizando deputados...");
+        System.out.println(">>> ETL: sincronizando deputados (isso pode demorar por causa do histórico)...");
         List<Deputado> deputados = client.buscarDeputados();
-        deputadoRepo.saveAll(deputados);
-        System.out.println(">>> ETL: " + deputados.size() + " deputados sincronizados.");
+
+        int processados = 0;
+        for (Deputado dep : deputados) {
+            try {
+                // Busca o histórico do deputado na API
+                List<CamaraClient.HistoricoApi> historico = client.buscarHistoricoDeputado(dep.getId());
+
+                // Filtra pela legislatura atual (57) e pega o evento mais recente
+                String situacaoAtual = historico.stream()
+                        .filter(h -> h.idLegislatura() != null && h.idLegislatura().equals(57))
+                        .filter(h -> h.dataHora() != null)
+                        .max(java.util.Comparator.comparing(CamaraClient.HistoricoApi::dataHora))
+                        .map(CamaraClient.HistoricoApi::situacao)
+                        .orElse(null); // Se não achar nada, fica nulo
+
+                dep.setSituacao(situacaoAtual);
+                deputadoRepo.save(dep);
+                processados++;
+
+                // Pausa para não bloquear a API da Câmara
+                Thread.sleep(150);
+
+            } catch (Exception e) {
+                System.err.println("Erro no histórico do deputado " + dep.getId() + ": " + e.getMessage());
+                deputadoRepo.save(dep); // Salva sem a situação para não perder o deputado
+            }
+        }
+        System.out.println(">>> ETL: " + processados + " deputados sincronizados com histórico.");
     }
 
     @Transactional

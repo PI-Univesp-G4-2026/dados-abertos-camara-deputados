@@ -40,6 +40,23 @@ public class CamaraClient {
         return buscarPaginado(url, this::paraDeputado);
     }
 
+    public record HistoricoApi(Integer idLegislatura, LocalDateTime dataHora, String situacao) {
+    }
+
+    public List<HistoricoApi> buscarHistoricoDeputado(Long deputadoId) {
+        String url = baseUrl + "/deputados/" + deputadoId + "/historico";
+        return buscarSemPaginacao(url, this::paraHistorico);
+    }
+
+    private HistoricoApi paraHistorico(JsonNode d) {
+        String dataStr = textOrNull(d, "dataHora");
+        return new HistoricoApi(
+                d.hasNonNull("idLegislatura") ? d.get("idLegislatura").asInt() : null,
+                dataStr != null ? LocalDateTime.parse(dataStr) : null,
+                textOrNull(d, "situacao")
+        );
+    }
+
     private Deputado paraDeputado(JsonNode d) {
         Deputado dep = new Deputado();
         dep.setId(d.get("id").asLong());
