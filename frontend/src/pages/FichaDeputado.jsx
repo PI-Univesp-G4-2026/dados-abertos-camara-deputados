@@ -80,17 +80,37 @@ export default function FichaDeputado() {
                     {[2023, 2024, 2025, 2026].map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
 
+                {/* Gráfico de Barras - Por Tipo */}
                 {resumoDesp?.porTipo?.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={resumoDesp.porTipo.map(item => ({ tipo: item.chave, valor: Number(item.valor) }))} layout="vertical" margin={{ left: 180, right: 30 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis dataKey="tipo" type="category" width={170} tick={{ fontSize: 12 }} />
-                            <Tooltip formatter={(v) => `R$ ${Number(v).toFixed(2)}`} />
-                            <Bar dataKey="valor" fill="#2563eb" />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    <>
+                        <h3>Gastos por Categoria</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={resumoDesp.porTipo.map(item => ({ tipo: item.chave, valor: Number(item.valor) }))} layout="vertical" margin={{ left: 180, right: 30 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis type="number" />
+                                <YAxis dataKey="tipo" type="category" width={170} tick={{ fontSize: 12 }} />
+                                <Tooltip formatter={(v) => `R$ ${Number(v).toFixed(2)}`} />
+                                <Bar dataKey="valor" fill="#2563eb" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </>
                 ) : <p>Sem despesas registradas para este ano.</p>}
+
+                {/* Gráfico de Linhas - Evolução Mensal (O que tínhamos perdido) */}
+                {resumoDesp?.mensal?.length > 0 && (
+                    <div style={{ marginTop: '2rem' }}>
+                        <h3>Evolução Mensal</h3>
+                        <ResponsiveContainer width="100%" height={250}>
+                            <LineChart data={resumoDesp.mensal.map(item => ({ mes: item.chave, valor: Number(item.valor) }))}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="mes" />
+                                <YAxis />
+                                <Tooltip formatter={(v) => `R$ ${Number(v).toFixed(2)}`} />
+                                <Line type="monotone" dataKey="valor" stroke="#16a34a" strokeWidth={3} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
             </section>
 
             {/* SEÇÃO DE VOTAÇÕES */}
