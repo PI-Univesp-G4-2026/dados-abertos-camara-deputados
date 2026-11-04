@@ -5,19 +5,18 @@ import { listarDeputados } from '../services/api'
 export default function ListaDeputados() {
     const [deputados, setDeputados] = useState([])
     const [nome, setNome] = useState('')
-    const [situacao, setSituacao] = useState('Exercício') // Filtro padrão
+    const [situacao, setSituacao] = useState('Ativo') // Filtro padrão
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState(null)
 
     useEffect(() => {
         carregar()
-    }, [situacao]) // Recarrega quando o filtro muda
+    }, [situacao])
 
     async function carregar() {
         setLoading(true)
         setErro(null)
         try {
-            // Passa a situação como parâmetro para o backend
             const data = await listarDeputados({ nome, situacao, size: 50 })
             setDeputados(data.content || [])
         } catch (e) {
@@ -27,13 +26,23 @@ export default function ListaDeputados() {
         }
     }
 
-    // Função para renderizar a etiqueta colorida
+    // Função para renderizar a etiqueta colorida com as regras definidas
     const renderBadge = (situacaoDep) => {
         if (!situacaoDep) return null;
 
-        const isExercicio = situacaoDep.toLowerCase().includes('exercício');
-        const corFundo = isExercicio ? '#dcfce7' : '#f1f5f9';
-        const corTexto = isExercicio ? '#166534' : '#475569';
+        let corFundo = '#f1f5f9'; // Cinza (Suplência)
+        let corTexto = '#475569';
+
+        if (situacaoDep === 'Exercício' || situacaoDep === 'Convocado') {
+            corFundo = '#dcfce7'; // Verde (Ativos)
+            corTexto = '#166534';
+        } else if (situacaoDep === 'Licença') {
+            corFundo = '#fef08a'; // Amarelo (Licença temporária)
+            corTexto = '#854d0e';
+        } else if (['Vacância', 'Fim de Mandato', 'Afastado', 'Suspenso'].includes(situacaoDep)) {
+            corFundo = '#fee2e2'; // Vermelho (Inativos/Saíram)
+            corTexto = '#991b1b';
+        }
 
         return (
             <span style={{
@@ -52,21 +61,11 @@ export default function ListaDeputados() {
 
     return (
         <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h1 style={{ margin: 0 }}>Deputados Federais</h1>
                 <Link
                     to="/partidos"
-                    style={{
-                        backgroundColor: '#2563eb',
-                        color: 'white',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '4px',
-                        textDecoration: 'none',
-                        fontWeight: 'bold',
-                        fontSize: '0.9rem',
-                        display: 'inline-block'
-                    }}
+                    style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}
                 >
                     Ver Painel de Partidos →
                 </Link>
@@ -87,7 +86,6 @@ export default function ListaDeputados() {
                             type="search"
                             value={nome}
                             onChange={(e) => setNome(e.target.value)}
-                            aria-label="Buscar deputado por nome"
                             style={{ padding: '0.5rem', width: '250px' }}
                         />
                     </div>
@@ -104,9 +102,9 @@ export default function ListaDeputados() {
                         onChange={e => setSituacao(e.target.value)}
                         style={{ padding: '0.55rem' }}
                     >
-                        <option value="Exercício">Apenas em Exercício</option>
+                        <option value="Ativo">Apenas Ativos</option>
+                        <option value="Inativo">Apenas Inativos</option>
                         <option value="">Todos os Deputados</option>
-                        <option value="Suplência">Apenas Suplentes</option>
                     </select>
                 </div>
             </div>

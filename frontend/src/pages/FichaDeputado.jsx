@@ -56,10 +56,46 @@ export default function FichaDeputado() {
         value: item.total
     })) || []
 
+    // Função para renderizar a etiqueta colorida na ficha
+    const renderBadge = (situacaoDep) => {
+        if (!situacaoDep) return null;
+
+        let corFundo = '#f1f5f9'; // Cinza (Suplência)
+        let corTexto = '#475569';
+
+        if (situacaoDep === 'Exercício' || situacaoDep === 'Convocado') {
+            corFundo = '#dcfce7'; // Verde (Ativos)
+            corTexto = '#166534';
+        } else if (situacaoDep === 'Licença') {
+            corFundo = '#fef08a'; // Amarelo (Licença temporária)
+            corTexto = '#854d0e';
+        } else if (['Vacância', 'Fim de Mandato', 'Afastado', 'Suspenso'].includes(situacaoDep)) {
+            corFundo = '#fee2e2'; // Vermelho (Inativos/Saíram)
+            corTexto = '#991b1b';
+        }
+
+        return (
+            <span style={{
+                backgroundColor: corFundo,
+                color: corTexto,
+                padding: '4px 12px',
+                borderRadius: '16px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                display: 'inline-block'
+            }}>
+                {situacaoDep}
+            </span>
+        );
+    }
+
     return (
         <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
             <Link to="/">← Voltar</Link>
-            <h1>{deputado.nome}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <h1 style={{ margin: 0 }}>{deputado.nome}</h1>
+                {renderBadge(deputado.situacao)}
+            </div>
 
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', marginBottom: '2rem' }}>
                 {deputado.urlFoto && (

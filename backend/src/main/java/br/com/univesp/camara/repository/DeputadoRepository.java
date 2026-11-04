@@ -7,15 +7,17 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface DeputadoRepository extends JpaRepository<Deputado, Long> {
 
     @Query("SELECT d FROM Deputado d WHERE d.legislatura = :legislatura " +
-            "AND (:situacao IS NULL OR :situacao = '' OR d.situacao = :situacao) " +
+            "AND (:situacoes IS NULL OR d.situacao IN :situacoes) " +
             "AND (:nome IS NULL OR :nome = '' OR LOWER(d.nome) LIKE LOWER(CONCAT('%', :nome, '%'))) " +
             "AND (:partido IS NULL OR :partido = '' OR d.siglaPartido = :partido) " +
             "AND (:uf IS NULL OR :uf = '' OR d.siglaUf = :uf)")
     Page<Deputado> buscarComFiltros(@Param("legislatura") Integer legislatura,
-                                    @Param("situacao") String situacao,
+                                    @Param("situacoes") List<String> situacoes,
                                     @Param("nome") String nome,
                                     @Param("partido") String partido,
                                     @Param("uf") String uf,
