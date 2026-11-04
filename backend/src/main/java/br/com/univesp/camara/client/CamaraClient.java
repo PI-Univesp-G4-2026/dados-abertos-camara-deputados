@@ -49,6 +49,7 @@ public class CamaraClient {
         dep.setSiglaUf(d.path("siglaUf").asText(null));
         dep.setUrlFoto(d.path("urlFoto").asText(null));
         dep.setEmail(d.path("email").asText(null));
+        dep.setSituacao(d.path("situacao").asText(null));
         dep.setLegislatura(legislaturaAtual);
         return dep;
     }

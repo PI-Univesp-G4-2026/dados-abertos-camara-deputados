@@ -26,21 +26,12 @@ public class DeputadoController {
             @RequestParam(required = false) String nome,
             @RequestParam(required = false) String partido,
             @RequestParam(required = false) String uf,
+            @RequestParam(required = false) String situacao, // <--- NOVO PARAMETRO
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         var pageable = PageRequest.of(page, size, Sort.by("nome"));
-
-        if (nome != null && !nome.isBlank()) {
-            return repository.findByNomeContainingIgnoreCaseAndLegislatura(nome, LEGISLATURA_ATUAL, pageable);
-        }
-        if (partido != null && !partido.isBlank()) {
-            return repository.findBySiglaPartidoAndLegislatura(partido, LEGISLATURA_ATUAL, pageable);
-        }
-        if (uf != null && !uf.isBlank()) {
-            return repository.findBySiglaUfAndLegislatura(uf, LEGISLATURA_ATUAL, pageable);
-        }
-        return repository.findByLegislatura(LEGISLATURA_ATUAL, pageable);
+        return repository.buscarComFiltros(LEGISLATURA_ATUAL, situacao, nome, partido, uf, pageable);
     }
 
     @GetMapping("/{id}")
