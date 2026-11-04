@@ -12,7 +12,7 @@ import java.util.List;
 public interface DeputadoRepository extends JpaRepository<Deputado, Long> {
 
     @Query("SELECT d FROM Deputado d WHERE d.legislatura = :legislatura " +
-            "AND (:situacoes IS NULL OR d.situacao IN :situacoes) " +
+            "AND (:situacoes IS NULL OR size(:situacoes) = 0 OR d.situacao IN :situacoes) " +
             "AND (:nome IS NULL OR :nome = '' OR LOWER(d.nome) LIKE LOWER(CONCAT('%', :nome, '%'))) " +
             "AND (:partido IS NULL OR :partido = '' OR d.siglaPartido = :partido) " +
             "AND (:uf IS NULL OR :uf = '' OR d.siglaUf = :uf)")
