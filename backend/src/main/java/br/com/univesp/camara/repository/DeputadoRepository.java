@@ -43,6 +43,10 @@ public interface DeputadoRepository extends JpaRepository<Deputado, Long> {
                                @Param("uf") String uf,
                                Pageable pageable);
 
-    @Query("SELECT d.siglaPartido, COUNT(d) FROM Deputado d WHERE d.legislatura = :legislatura AND d.situacao = 'Exercício' GROUP BY d.siglaPartido ORDER BY COUNT(d) DESC")
-    java.util.List<Object[]> contarDeputadosPorPartido(@Param("legislatura") Integer legislatura);
+    @Query("SELECT d.siglaPartido, COUNT(d) FROM Deputado d " +
+            "WHERE d.legislatura = :legislatura AND UPPER(d.situacao) = 'EXERCÍCIO' " +
+            "GROUP BY d.siglaPartido ORDER BY COUNT(d) DESC")
+    List<Object[]> contarDeputadosPorPartido(@Param("legislatura") Integer legislatura);
+
+
 }

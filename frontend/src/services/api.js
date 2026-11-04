@@ -28,6 +28,8 @@ export const listarVotosDeputado = (id, params) =>
 export const obterRaioXVotacao = (votacaoId, deputadoId) =>
     api.get(`/votacoes/${votacaoId}/raio-x`, { params: { deputadoId } }).then(r => r.data)
 
-// --- PARTIDOS ---
 export const listarPartidos = () =>
     api.get('/partidos').then(r => r.data)
+
+export const obterEstatisticasPartidos = () =>
+    api.get('/partidos/estatisticas').then(r => r.data)
