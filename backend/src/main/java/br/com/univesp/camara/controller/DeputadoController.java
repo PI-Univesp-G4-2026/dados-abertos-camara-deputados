@@ -35,16 +35,19 @@ public class DeputadoController {
         var pageable = PageRequest.of(page, size, Sort.by("nome"));
 
         // Traduz o filtro simples para a lista de status da Câmara
-        List<String> situacoesFiltro = new java.util.ArrayList<>();
-
+        List<String> situacoesFiltro = null;
         if ("Ativo".equalsIgnoreCase(situacao)) {
             situacoesFiltro = List.of("Exercício", "Convocado", "Licença");
         } else if ("Inativo".equalsIgnoreCase(situacao)) {
             situacoesFiltro = List.of("Suplência", "Vacância", "Fim de Mandato", "Afastado", "Suspenso");
         }
-        // Se for nulo, vazio ou "Todos", a lista fica vazia e a query ignora o filtro
 
-        return repository.buscarComFiltros(LEGISLATURA_ATUAL, situacoesFiltro, nome, partido, uf, pageable);
+        // Se a lista for nula ou vazia (Todos), chama a query sem filtro de situação
+        if (situacoesFiltro == null || situacoesFiltro.isEmpty()) {
+            return repository.buscarSemFiltroSituacao(LEGISLATURA_ATUAL, nome, partido, uf, pageable);
+        } else {
+            return repository.buscarComFiltroSituacao(LEGISLATURA_ATUAL, situacoesFiltro, nome, partido, uf, pageable);
+        }
     }
 
     @GetMapping("/{id}")
