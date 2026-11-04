@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,12 +24,14 @@ public class VotoEtlService {
     private final VotacaoRepository votacaoRepo;
     private final VotoRepository votoRepo;
     private final DeputadoRepository deputadoRepo;
+    private final TransactionTemplate tx;
 
-    public VotoEtlService(CamaraClient client, VotacaoRepository votacaoRepo, VotoRepository votoRepo, DeputadoRepository deputadoRepo) {
+    public VotoEtlService(CamaraClient client, VotacaoRepository votacaoRepo, VotoRepository votoRepo, DeputadoRepository deputadoRepo, TransactionTemplate tx) {
         this.client = client;
         this.votacaoRepo = votacaoRepo;
         this.votoRepo = votoRepo;
         this.deputadoRepo = deputadoRepo;
+        this.tx = tx;
     }
 
     public record ResultadoVoto(int salvos, int ignorados) {
@@ -57,11 +60,9 @@ public class VotoEtlService {
         System.out.println(">>> ETL: " + votosSalvos + " votos salvos, " + ignorados + " ignorados");
     }
 
-    @Transactional
     public ResultadoVoto sincronizarVotacao(String votacaoId) {
-        Votacao votacao = votacaoRepo.findById(votacaoId).orElseThrow(() -> new IllegalArgumentException("Votação não encontrada: " + votacaoId));
-
-        votoRepo.deleteByVotacaoId(votacaoId);
+        Votacao votacao = votacaoRepo.findById(votacaoId)
+                .orElseThrow(() -> new IllegalArgumentException("Votação não encontrada: " + votacaoId));
         return processarVotacao(votacao, carregarIdsDeputados());
     }
 
@@ -89,6 +90,11 @@ public class VotoEtlService {
         votacao.setVotosCarregados(true);
         votacaoRepo.save(votacao);
 
+        tx.executeWithoutResult(status -> {
+            votoRepo.deleteByVotacaoId(votacao.getId());
+            votoRepo.saveAll(votos);
+            votacaoRepo.marcarVotosCarregados(votacao.getId());
+        });
         return new ResultadoVoto(votos.size(), ignorados);
     }
 

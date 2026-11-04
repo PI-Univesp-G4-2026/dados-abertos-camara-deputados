@@ -44,4 +44,48 @@ public class Proposicao {
 
     @PrePersist
     public void prePersist(){this.createdAt = LocalDateTime.now();}
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getSiglaTipo() {
+        return siglaTipo;
+    }
+
+    public Integer getNumero() {
+        return numero;
+    }
+
+    public Integer getAno() {
+        return ano;
+    }
+
+    public String getEmenta() {
+        return ementa;
+    }
+
+    public Integer getCodTipo() {
+        return codTipo;
+    }
+
+    public String getUrlInteiroTeor() {
+        return urlInteiroTeor;
+    }
+
+    public LocalDateTime getDataApresentacao() {
+        return dataApresentacao;
+    }
+
+    public boolean isDadosCarregados() {
+        return dadosCarregados;
+    }
+
+    public boolean isAutoresCarregados() {
+        return autoresCarregados;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 }
