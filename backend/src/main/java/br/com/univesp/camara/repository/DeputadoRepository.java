@@ -12,26 +12,36 @@ import java.util.List;
 public interface DeputadoRepository extends JpaRepository<Deputado, Long> {
 
     @Query("SELECT d FROM Deputado d WHERE d.legislatura = :legislatura " +
-            "AND d.situacao IN :situacoes " +
+            "AND UPPER(d.situacao) = 'EXERCÍCIO' " +
             "AND (:nome IS NULL OR :nome = '' OR LOWER(d.nome) LIKE LOWER(CONCAT('%', :nome, '%'))) " +
             "AND (:partido IS NULL OR :partido = '' OR d.siglaPartido = :partido) " +
             "AND (:uf IS NULL OR :uf = '' OR d.siglaUf = :uf)")
-    Page<Deputado> buscarComFiltroSituacao(@Param("legislatura") Integer legislatura,
-                                           @Param("situacoes") List<String> situacoes,
-                                           @Param("nome") String nome,
-                                           @Param("partido") String partido,
-                                           @Param("uf") String uf,
-                                           Pageable pageable);
+    Page<Deputado> buscarAtivos(@Param("legislatura") Integer legislatura,
+                                @Param("nome") String nome,
+                                @Param("partido") String partido,
+                                @Param("uf") String uf,
+                                Pageable pageable);
+
+    @Query("SELECT d FROM Deputado d WHERE d.legislatura = :legislatura " +
+            "AND (d.situacao IS NULL OR UPPER(d.situacao) <> 'EXERCÍCIO') " +
+            "AND (:nome IS NULL OR :nome = '' OR LOWER(d.nome) LIKE LOWER(CONCAT('%', :nome, '%'))) " +
+            "AND (:partido IS NULL OR :partido = '' OR d.siglaPartido = :partido) " +
+            "AND (:uf IS NULL OR :uf = '' OR d.siglaUf = :uf)")
+    Page<Deputado> buscarInativos(@Param("legislatura") Integer legislatura,
+                                  @Param("nome") String nome,
+                                  @Param("partido") String partido,
+                                  @Param("uf") String uf,
+                                  Pageable pageable);
 
     @Query("SELECT d FROM Deputado d WHERE d.legislatura = :legislatura " +
             "AND (:nome IS NULL OR :nome = '' OR LOWER(d.nome) LIKE LOWER(CONCAT('%', :nome, '%'))) " +
             "AND (:partido IS NULL OR :partido = '' OR d.siglaPartido = :partido) " +
             "AND (:uf IS NULL OR :uf = '' OR d.siglaUf = :uf)")
-    Page<Deputado> buscarSemFiltroSituacao(@Param("legislatura") Integer legislatura,
-                                           @Param("nome") String nome,
-                                           @Param("partido") String partido,
-                                           @Param("uf") String uf,
-                                           Pageable pageable);
+    Page<Deputado> buscarTodos(@Param("legislatura") Integer legislatura,
+                               @Param("nome") String nome,
+                               @Param("partido") String partido,
+                               @Param("uf") String uf,
+                               Pageable pageable);
 
     @Query("SELECT d.siglaPartido, COUNT(d) FROM Deputado d WHERE d.legislatura = :legislatura AND d.situacao = 'Exercício' GROUP BY d.siglaPartido ORDER BY COUNT(d) DESC")
     java.util.List<Object[]> contarDeputadosPorPartido(@Param("legislatura") Integer legislatura);
