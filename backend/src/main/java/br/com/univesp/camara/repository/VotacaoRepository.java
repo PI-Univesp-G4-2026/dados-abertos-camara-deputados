@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,4 +39,11 @@ public interface VotacaoRepository extends JpaRepository<Votacao, String> {
     @Modifying
     @Query("UPDATE Votacao v SET v.votosCarregados = true WHERE v.id = :id")
     void marcarVotosCarregados(@Param("id") String id);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE votacoes v SET proposicao_id = m.proposicao_id " +
+            "FROM votacao_proposicao_manual m " +
+            "WHERE v.id = m.votacao_id AND v.proposicao_id IS NULL", nativeQuery = true)
+    int aplicarVinculosManuais();
 }

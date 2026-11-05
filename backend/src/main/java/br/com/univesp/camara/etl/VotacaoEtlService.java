@@ -43,16 +43,23 @@ public class VotacaoEtlService {
         LocalDate atual = inicio;
 
         while (!atual.isAfter(fim)) {
-            LocalDate fimJanela = atual.plusMonths(3);
+            LocalDate fimJanela = atual.plusMonths(3).minusDays(1);
             if (fimJanela.isAfter(fim)) fimJanela = fim;
 
             try {
                 List<Votacao> votacoes = client.buscarVotacoes(atual, fimJanela);
                 List<String> ids = votacoes.stream().map(Votacao::getId).toList();
-                Map<String, Boolean> jaCarregadas = votacaoRepo.findAllById(ids).stream()
-                        .collect(Collectors.toMap(Votacao::getId, Votacao::isVotosCarregados));
-                votacoes.forEach(v ->
-                        v.setVotosCarregados(jaCarregadas.getOrDefault(v.getId(), false)));
+                Map<String, Votacao> existentes = votacaoRepo.findAllById(ids).stream()
+                        .collect(Collectors.toMap(Votacao::getId, v -> v));
+
+                votacoes.forEach(v -> {
+                    Votacao antiga = existentes.get(v.getId());
+                    if (antiga == null) return;
+                    v.setVotosCarregados(antiga.isVotosCarregados());
+                    if (v.getProposicaoId() == null) {
+                        v.setProposicaoId(antiga.getProposicaoId());
+                    }
+                });
                 votacaoRepo.saveAll(votacoes);
                 total += votacoes.size();
                 System.out.println(" - " + atual + " a " + fimJanela + ": " + votacoes.size() + " votações");
@@ -61,8 +68,11 @@ public class VotacaoEtlService {
                 System.err.println(" - Falha na janela " + atual + " a " + fimJanela + ": " + e.getMessage());
                 break;
             }
-
             atual = fimJanela.plusDays(1);
+        }
+        int vinculados = votacaoRepo.aplicarVinculosManuais();
+        if (vinculados > 0) {
+            System.out.println(">>> ETL: " + vinculados + " vínculos manuais aplicados");
         }
         System.out.println(">>> ETL: " + total + " votações sincronizadas no total.");
     }
