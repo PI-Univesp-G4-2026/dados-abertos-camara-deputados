@@ -1,11 +1,6 @@
 package br.com.univesp.camara.controller;
 
-import br.com.univesp.camara.dto.RaioXVotacaoDto;
-import br.com.univesp.camara.dto.VotacaoDetalheDto;
-import br.com.univesp.camara.dto.VotacaoDto;
-import br.com.univesp.camara.dto.VotoDeputadoDto;
-import br.com.univesp.camara.model.OrientacaoBancada;
-import br.com.univesp.camara.model.Proposicao;
+import br.com.univesp.camara.dto.*;
 import br.com.univesp.camara.model.Votacao;
 import br.com.univesp.camara.model.Voto;
 import br.com.univesp.camara.repository.OrientacaoBancadaRepository;
@@ -22,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/votacoes")
@@ -72,9 +68,9 @@ public class VotacaoController {
     public ResponseEntity<VotacaoDetalheDto> detalhar(
             @PathVariable String id) {
         return votacaoRepo.findById(id).map(votacao -> {
-            List<Object[]> linhas = votoRepo.placarPorVotacao(id);
-            return ResponseEntity.ok(VotacaoDetalheDto.from(votacao, linhas));
-        })
+                    List<Object[]> linhas = votoRepo.placarPorVotacao(id);
+                    return ResponseEntity.ok(VotacaoDetalheDto.from(votacao, linhas));
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -82,40 +78,34 @@ public class VotacaoController {
     public ResponseEntity<RaioXVotacaoDto> raioX(
             @PathVariable String votacaoId,
             @RequestParam Long deputadoId) {
+        Votacao votacao = votacaoRepo.findById(votacaoId).orElse(null);
+        if (votacao == null) return ResponseEntity.notFound().build();
 
-        Votacao votacao = votacaoRepo.findById(votacaoId).orElseThrow();
+        ProposicaoDto proposicao = votacao.getProposicaoId() == null ? null : proposicaoRepo.findById(votacao.getProposicaoId()).map(ProposicaoDto::from).orElse(null);
+
+        List<OrientacaoDto> orientacoes = orientacaoRepo.findByVotacaoId(votacaoId).stream()
+                .map(OrientacaoDto::from).toList();
+
+        Voto voto = votoRepo.findByVotacaoIdAndDeputadoId(votacaoId, deputadoId).stream().findFirst().orElse(null);
+
         RaioXVotacaoDto dto = new RaioXVotacaoDto();
         dto.setVotacao(VotacaoDto.from(votacao));
-
-        // 1. Proposição
-        if (votacao.getProposicaoId() != null) {
-            Proposicao p = proposicaoRepo.findById(votacao.getProposicaoId()).orElse(null);
-            dto.setProposicao(p);
-        }
-
-        // 2. Voto do Deputado
-        List<Voto> votos = votoRepo.findByVotacaoIdAndDeputadoId(votacaoId, deputadoId);
-        if (votos != null && !votos.isEmpty()) {
-            Voto v = votos.get(0);
-            dto.setVotoDeputado(VotoDeputadoDto.from(v));
-
-            // 3. Orientação do Partido dele
-            List<OrientacaoBancada> orientacoes = orientacaoRepo.findByVotacaoId(votacaoId);
-            dto.setTodasOrientacoes(orientacoes);
-
-            // Evita erro de NullPointerException se o partido não estiver na lista
-            String siglaPartidoDeputado = v.getSiglaPartido();
-            String orientacaoPartido = orientacoes.stream()
-                    .filter(o -> o.getSiglaPartidoBloco() != null &&
-                            siglaPartidoDeputado != null &&
-                            o.getSiglaPartidoBloco().contains(siglaPartidoDeputado))
-                    .map(OrientacaoBancada::getOrientacaoVoto)
-                    .findFirst()
-                    .orElse("Sem orientação registrada");
-
-            dto.setOrientacaoPartidoDeputado(orientacaoPartido);
+        dto.setProposicao(proposicao);
+        dto.setTodasOrientacoes(orientacoes);
+        if (voto != null) {
+            dto.setVotoDeputado(VotoDeputadoDto.from(voto));
+            dto.setOrientacaoPartidoDeputado(orientacaoPartido(orientacoes, voto.getSiglaPartido()));
         }
         return ResponseEntity.ok(dto);
+    }
+
+    private String orientacaoPartido(List<OrientacaoDto> orientacoes, String siglaPartido) {
+        if (siglaPartido == null) return null;
+        return orientacoes.stream().filter(o -> o.siglaPartidoBloco() != null && o.siglaPartidoBloco().equalsIgnoreCase(siglaPartido))
+                .map(OrientacaoDto::orientacaoVoto)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 }
 
