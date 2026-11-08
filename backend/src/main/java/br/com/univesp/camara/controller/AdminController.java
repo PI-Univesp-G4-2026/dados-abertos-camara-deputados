@@ -189,4 +189,15 @@ public class AdminController {
         orientacaoRepo.saveAll(list);
         return ResponseEntity.ok(Map.of("status", "ok", "mensagem", list.size() + " orientações salvas."));
     }
+
+    @PostMapping("/etl/proposicoes/pec-pl")
+    public ResponseEntity<Map<String, Object>> sincronizarPecPl(@RequestParam(defaultValue = "2026") int ano) {
+        // CodTipo 136 = PEC, 139 = PL
+        proposicaoEtlService.sincronizarProposicoesPorAnoETipos(ano, "136,139");
+        return ResponseEntity.ok(Map.of(
+                "status", "ok",
+                "ano", ano,
+                "mensagem", "Sincronização de PECs e PLs concluída."
+        ));
+    }
 }

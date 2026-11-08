@@ -212,6 +212,12 @@ public class CamaraClient {
         return buscarSemPaginacao(url, this::paraProposicao);
     }
 
+    public List<ProposicaoApi> buscarProposicoesPorAnoETipos(int ano, String codTipos) {
+        // A API aceita codTipo=136%2C139 (que significa 136,139). Passaremos os itens=100 para paginar mais rápido.
+        String url = baseUrl + "/proposicoes?ano=" + ano + "&codTipo=" + codTipos + "&ordenarPor=id&itens=100";
+        return buscarPaginado(url, this::paraProposicao);
+    }
+
     private ProposicaoApi paraProposicao(JsonNode d) {
         String dataStrApresentacao = textOrNull(d, "dataApresentacao");
         return new ProposicaoApi(

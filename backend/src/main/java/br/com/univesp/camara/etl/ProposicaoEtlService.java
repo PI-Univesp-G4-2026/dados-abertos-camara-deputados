@@ -130,4 +130,38 @@ public class ProposicaoEtlService {
         Matcher m = Pattern.compile("/deputados/(\\d+)$").matcher(uri);
         return m.find() ? Long.valueOf(m.group(1)) : null;
     }
+
+    public void sincronizarProposicoesPorAnoETipos(int ano, String codTipos) {
+        System.out.println(">>> ETL: sincronizando proposições tipo " + codTipos + " do ano " + ano + "...");
+
+        // 1. Busca na API da Câmara
+        List<CamaraClient.ProposicaoApi> apis = client.buscarProposicoesPorAnoETipos(ano, codTipos);
+        System.out.println(">>> ETL: " + apis.size() + " proposições encontradas na API.");
+
+        // 2. Busca os que já existem no banco para preservar as flags de autores
+        List<Long> ids = apis.stream().map(CamaraClient.ProposicaoApi::id).toList();
+        Map<Long, Proposicao> existentes = proposicaoRepo.findAllById(ids).stream()
+                .collect(Collectors.toMap(Proposicao::getId, Function.identity()));
+
+        // 3. Prepara a lista para salvar
+        List<Proposicao> paraSalvar = new ArrayList<>();
+        for (CamaraClient.ProposicaoApi api : apis) {
+            Proposicao p = existentes.getOrDefault(api.id(), new Proposicao());
+            p.setId(api.id());
+            p.setSiglaTipo(api.siglaTipo());
+            p.setCodTipo(api.codTipo());
+            p.setNumero(api.numero());
+            p.setAno(api.ano());
+            p.setEmenta(api.ementa());
+            p.setDataApresentacao(api.dataApresentacao());
+            p.setDadosCarregados(true); // Marcamos como carregada, pois já temos os dados da API
+
+            // Se for uma proposição nova, a flag de autores começa como false. Se já existia, mantém o valor atual.
+            paraSalvar.add(p);
+        }
+
+        // 4. Salva tudo no banco
+        proposicaoRepo.saveAll(paraSalvar);
+        System.out.println(">>> ETL: " + paraSalvar.size() + " proposições salvas/atualizadas no banco.");
+    }
 }
