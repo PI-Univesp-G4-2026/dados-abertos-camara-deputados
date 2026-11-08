@@ -117,18 +117,23 @@ export default function ListaDeputados() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h1 style={{ margin: 0 }}>Deputados Federais {partidoFiltro && `- ${partidoFiltro}`}</h1>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <Link to="/votacoes" style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                {/* Agrupamento 2x2 dos botões */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr', // Cria duas colunas iguais
+                    gap: '0.5rem'
+                }}>
+                    <Link to="/votacoes" style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.85rem', textAlign: 'center', display: 'block' }}>
                         Painel de Votações
                     </Link>
-                    <Link to="/temas" style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                    <Link to="/temas" style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.85rem', textAlign: 'center', display: 'block' }}>
                         Painel de Temas
                     </Link>
-                    <Link to="/proposicoes" style={{ backgroundColor: '#059669', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                        Ver Proposições (PECs/PLs)
+                    <Link to="/proposicoes" style={{ backgroundColor: '#059669', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.85rem', textAlign: 'center', display: 'block' }}>
+                        Ver Proposições
                     </Link>
-                    <Link to="/partidos" style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                        Ver Painel de Partidos →
+                    <Link to="/partidos" style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.85rem', textAlign: 'center', display: 'block' }}>
+                        Painel de Partidos →
                     </Link>
                 </div>
             </div>
