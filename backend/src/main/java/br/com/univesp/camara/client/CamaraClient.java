@@ -400,6 +400,7 @@ public class CamaraClient {
             Proposicao p = new Proposicao();
             p.setId(root.get("id").asLong());
             p.setSiglaTipo(textOrNull(root, "siglaTipo"));
+            p.setCodTipo(root.hasNonNull("codTipo") ? root.get("codTipo").asInt() : null);
             p.setNumero(root.path("numero").asInt());
             p.setAno(root.path("ano").asInt());
             p.setEmenta(textOrNull(root, "ementa"));
