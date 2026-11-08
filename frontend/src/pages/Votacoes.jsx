@@ -9,28 +9,32 @@ export default function Votacoes() {
     const [hasMore, setHasMore] = useState(true)
     const [totalElements, setTotalElements] = useState(0)
 
-    // Filtros
     const [ano, setAno] = useState('')
     const [tipo, setTipo] = useState('')
     const [termo, setTermo] = useState('')
     const [termoDebounced, setTermoDebounced] = useState('')
 
-    // Painel expandido
     const [expandido, setExpandido] = useState(null)
     const [detalhe, setDetalhe] = useState(null)
     const [loadingDetalhe, setLoadingDetalhe] = useState(false)
 
     const observerTarget = useRef(null)
+    const isFetching = useRef(false) // O "Cadeado"
 
-    // Debounce para o termo de busca
+    // Debounce
     useEffect(() => {
         const handler = setTimeout(() => setTermoDebounced(termo), 500)
         return () => clearTimeout(handler)
     }, [termo])
 
+    // A função agora está blindada contra loops
     const carregarVotacoes = useCallback(async (paginaAtual, acumular = false) => {
-        if (loading || (!hasMore && acumular)) return
-        setLoading(true)
+        if (isFetching.current) return;
+        if (acumular && !hasMore) return;
+
+        isFetching.current = true;
+        setLoading(true);
+
         try {
             const data = await listarVotacoesPecPl({
                 ano: ano || undefined,
@@ -39,33 +43,50 @@ export default function Votacoes() {
                 page: paginaAtual,
                 size: 15
             })
+
             if (acumular) {
                 setVotacoes(prev => [...prev, ...data.content])
             } else {
                 setVotacoes(data.content)
             }
+
             setTotalElements(data.totalElements)
             setHasMore(!data.last)
             setPage(paginaAtual)
         } catch (e) {
             console.error(e)
         } finally {
-            setLoading(false)
+            setLoading(false);
+            isFetching.current = false;
         }
-    }, [ano, tipo, termoDebounced, loading, hasMore])
+    }, [ano, tipo, termoDebounced, hasMore])
 
-    // Resetar e buscar ao mudar filtros
+    // Reseta e busca quando os filtros mudam (NÃO depende de carregarVotacoes)
     useEffect(() => {
         setPage(0)
         setHasMore(true)
-        carregarVotacoes(0, false)
-    }, [ano, tipo, termoDebounced, carregarVotacoes])
+        isFetching.current = false; // Destranca
+        // Chamada manual da função
+        const fetchInicial = async () => {
+            isFetching.current = true;
+            setLoading(true);
+            try {
+                const data = await listarVotacoesPecPl({
+                    ano: ano || undefined, tipo: tipo || undefined, descricao: termoDebounced || undefined, page: 0, size: 15
+                })
+                setVotacoes(data.content)
+                setTotalElements(data.totalElements)
+                setHasMore(!data.last)
+            } catch(e) { console.error(e) } finally { setLoading(false); isFetching.current = false; }
+        }
+        fetchInicial()
+    }, [ano, tipo, termoDebounced])
 
-    // Scroll Infinito
+    // Observer
     useEffect(() => {
         const observer = new IntersectionObserver(
             entries => {
-                if (entries[0].isIntersecting && hasMore && !loading) {
+                if (entries[0].isIntersecting && hasMore && !isFetching.current) {
                     carregarVotacoes(page + 1, true)
                 }
             },
@@ -73,11 +94,7 @@ export default function Votacoes() {
         )
         if (observerTarget.current) observer.observe(observerTarget.current)
         return () => observer.disconnect()
-    }, [hasMore, loading, page, carregarVotacoes])
-
-    const handleCarregarMais = () => {
-        carregarVotacoes(page + 1, true)
-    }
+    }, [hasMore, page, carregarVotacoes])
 
     const handleExpandir = async (votacaoId) => {
         if (expandido === votacaoId) {
@@ -109,7 +126,6 @@ export default function Votacoes() {
                 <span style={{ color: '#475569', fontSize: '0.9rem' }}>Total: <strong>{totalElements}</strong></span>
             </div>
 
-            {/* FILTROS */}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'flex-end', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div>
                     <label htmlFor="filtro-tipo" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Tipo</label>
@@ -144,48 +160,26 @@ export default function Votacoes() {
                     <Fragment key={v.id}>
                         <div
                             onClick={() => handleExpandir(v.id)}
-                            style={{
-                                padding: '1rem',
-                                background: expandido === v.id ? '#eff6ff' : '#f8fafc',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                transition: 'background-color 0.2s'
-                            }}
+                            style={{ padding: '1rem', background: expandido === v.id ? '#eff6ff' : '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.2s' }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>
-                                        {v.data} — {v.siglaOrgao}
-                                    </div>
-                                    <div style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: '500' }}>
-                                        {v.descricao}
-                                    </div>
+                                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>{v.data} — {v.siglaOrgao}</div>
+                                    <div style={{ fontSize: '0.95rem', color: '#1e293b', fontWeight: '500' }}>{v.descricao}</div>
                                 </div>
-                                <div style={{
-                                    padding: '4px 12px',
-                                    borderRadius: '16px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 'bold',
-                                    backgroundColor: v.aprovacao ? '#dcfce7' : '#fee2e2',
-                                    color: v.aprovacao ? '#166534' : '#991b1b',
-                                    whiteSpace: 'nowrap'
-                                }}>
+                                <div style={{ padding: '4px 12px', borderRadius: '16px', fontSize: '0.85rem', fontWeight: 'bold', backgroundColor: v.aprovacao ? '#dcfce7' : '#fee2e2', color: v.aprovacao ? '#166534' : '#991b1b', whiteSpace: 'nowrap' }}>
                                     {v.aprovacao ? 'Aprovada' : 'Rejeitada'}
                                 </div>
                             </div>
                         </div>
 
-                        {/* PAINEL EXPANDIDO (PLACAR) */}
                         {expandido === v.id && (
                             <div style={{ padding: '1.5rem', background: '#ffffff', border: '1px solid #bfdbfe', borderTop: 'none', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px', marginTop: '-0.5rem', zIndex: -1 }}>
                                 {loadingDetalhe && <p style={{ color: '#2563eb' }}>Buscando placar...</p>}
 
                                 {detalhe && detalhe.totalVotos === 0 && (
                                     <div style={{ padding: '1rem', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', color: '#92400e' }}>
-                                        {detalhe.votosCarregados
-                                            ? "Esta foi uma votação simbólica ou não possui registro nominal de votos individuais."
-                                            : "Os votos desta votação ainda estão pendentes de sincronização no sistema."}
+                                        {detalhe.votosCarregados ? "Esta foi uma votação simbólica ou não possui registro nominal de votos individuais." : "Os votos desta votação ainda estão pendentes de sincronização no sistema."}
                                     </div>
                                 )}
 
@@ -196,9 +190,7 @@ export default function Votacoes() {
                                             {detalhe.placar?.map(item => (
                                                 <div key={item.tipoVoto} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minWidth: '120px', textAlign: 'center' }}>
                                                     <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>{item.tipoVoto}</div>
-                                                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: item.tipoVoto === 'Sim' ? '#16a34a' : item.tipoVoto === 'Não' ? '#dc2626' : '#ca8a04' }}>
-                                                        {item.total}
-                                                    </div>
+                                                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: item.tipoVoto === 'Sim' ? '#16a34a' : item.tipoVoto === 'Não' ? '#dc2626' : '#ca8a04' }}>{item.total}</div>
                                                 </div>
                                             ))}
                                             <div style={{ padding: '1rem', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe', minWidth: '120px', textAlign: 'center' }}>
@@ -216,13 +208,22 @@ export default function Votacoes() {
 
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                 {loading && <p style={{ color: '#2563eb' }}>Carregando votações...</p>}
+
                 {!loading && hasMore && votacoes.length > 0 && (
-                    <button onClick={handleCarregarMais} style={{ padding: '0.75rem 2rem', backgroundColor: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                    <button onClick={() => carregarVotacoes(page + 1, true)} style={{ padding: '0.75rem 2rem', backgroundColor: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
                         Carregar Mais Votações
                     </button>
                 )}
+
                 {!loading && !hasMore && votacoes.length > 0 && (
                     <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Fim da lista.</p>
+                )}
+
+                {/* MENSAGEM DE LISTA VAZIA (O que faltava no seu Print 2) */}
+                {!loading && votacoes.length === 0 && (
+                    <p style={{ color: '#64748b', fontSize: '1.1rem', marginTop: '2rem' }}>
+                        Nenhuma votação encontrada para os filtros selecionados.
+                    </p>
                 )}
             </div>
 

@@ -7,7 +7,7 @@ export default function Proposicoes() {
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState(null)
 
-    const [ano, setAno] = useState('') // Inicia com Todos
+    const [ano, setAno] = useState('')
     const [tipo, setTipo] = useState('')
     const [termo, setTermo] = useState('')
     const [termoDebounced, setTermoDebounced] = useState('')
@@ -17,6 +17,7 @@ export default function Proposicoes() {
     const [totalElements, setTotalElements] = useState(0)
 
     const observerTarget = useRef(null)
+    const isFetching = useRef(false) // O Cadeado
 
     useEffect(() => {
         const handler = setTimeout(() => setTermoDebounced(termo), 500);
@@ -24,8 +25,10 @@ export default function Proposicoes() {
     }, [termo]);
 
     const carregar = useCallback(async (paginaAtual, acumular = false) => {
-        if (loading || (!hasMore && acumular)) return;
+        if (isFetching.current) return;
+        if (acumular && !hasMore) return;
 
+        isFetching.current = true;
         setLoading(true)
         setErro(null)
         try {
@@ -50,20 +53,32 @@ export default function Proposicoes() {
             setErro('Não foi possível carregar as proposições.')
         } finally {
             setLoading(false)
+            isFetching.current = false;
         }
-    }, [ano, tipo, termoDebounced, loading, hasMore])
+    }, [ano, tipo, termoDebounced, hasMore])
 
     useEffect(() => {
         setPage(0)
         setHasMore(true)
-        carregar(0, false)
-    }, [ano, tipo, termoDebounced, carregar])
+        isFetching.current = false;
 
-    // Scroll Infinito
+        const fetchInicial = async () => {
+            isFetching.current = true;
+            setLoading(true);
+            try {
+                const data = await listarProposicoes({ ano: ano || undefined, tipo: tipo || undefined, termo: termoDebounced || undefined, page: 0, size: 20 })
+                setProposicoes(data.content)
+                setTotalElements(data.totalElements)
+                setHasMore(!data.last)
+            } catch(e) { setErro('Não foi possível carregar.') } finally { setLoading(false); isFetching.current = false; }
+        }
+        fetchInicial()
+    }, [ano, tipo, termoDebounced])
+
     useEffect(() => {
         const observer = new IntersectionObserver(
             entries => {
-                if (entries[0].isIntersecting && hasMore && !loading) {
+                if (entries[0].isIntersecting && hasMore && !isFetching.current) {
                     carregar(page + 1, true)
                 }
             },
@@ -71,7 +86,7 @@ export default function Proposicoes() {
         )
         if (observerTarget.current) observer.observe(observerTarget.current)
         return () => observer.disconnect()
-    }, [hasMore, loading, page, carregar])
+    }, [hasMore, page, carregar])
 
     const handleCarregarMais = () => {
         carregar(page + 1, true)
@@ -151,7 +166,13 @@ export default function Proposicoes() {
                     </button>
                 )}
                 {!loading && !hasMore && proposicoes.length > 0 && <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Fim da lista.</p>}
-                {!loading && proposicoes.length === 0 && !erro && <p style={{ color: '#64748b' }}>Nenhuma proposição encontrada para estes filtros.</p>}
+
+                {/* MENSAGEM DE LISTA VAZIA */}
+                {!loading && proposicoes.length === 0 && !erro && (
+                    <p style={{ color: '#64748b', fontSize: '1.1rem', marginTop: '2rem' }}>
+                        Nenhuma proposição encontrada para os filtros selecionados.
+                    </p>
+                )}
             </div>
 
             <div ref={observerTarget} style={{ height: '10px' }}></div>
