@@ -136,11 +136,18 @@ export default function FichaDeputado() {
                 {resumoDesp?.porTipo?.length > 0 ? (
                     <>
                         <h3>Gastos por Categoria</h3>
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={Math.max(300, resumoDesp.porTipo.length * 45)}>
                             <BarChart data={resumoDesp.porTipo.map(item => ({ tipo: item.chave, valor: Number(item.valor) }))} layout="vertical" margin={{ left: 180, right: 30 }}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" />
-                                <YAxis dataKey="tipo" type="category" width={170} tick={{ fontSize: 12 }} />
+                                <YAxis
+                                    dataKey="tipo"
+                                    type="category"
+                                    width={170}
+                                    tick={{ fontSize: 11 }}
+                                    // Trunca textos muito longos no eixo Y para não embolar
+                                    tickFormatter={(val) => val.length > 25 ? val.substring(0, 22) + '...' : val}
+                                />
                                 <Tooltip formatter={(v) => `R$ ${Number(v).toFixed(2)}`} />
                                 <Bar dataKey="valor" fill="#2563eb" />
                             </BarChart>
@@ -152,7 +159,15 @@ export default function FichaDeputado() {
                     <div style={{ marginTop: '2rem' }}>
                         <h3>Evolução Mensal</h3>
                         <ResponsiveContainer width="100%" height={250}>
-                            <LineChart data={resumoDesp.mensal.map(item => ({ mes: item.chave, valor: Number(item.valor) }))}>
+                            <LineChart
+                                data={resumoDesp.mensal.map(item => {
+                                    const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                                    return {
+                                        mes: nomesMeses[Number(item.chave) - 1] || item.chave,
+                                        valor: Number(item.valor)
+                                    };
+                                })}
+                            >
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="mes" />
                                 <YAxis />

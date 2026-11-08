@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { listarProposicoes } from '../services/api'
 
@@ -7,39 +7,30 @@ export default function Proposicoes() {
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState(null)
 
-    // Filtros
-    const [ano, setAno] = useState(2026)
+    const [ano, setAno] = useState('') // Inicia com Todos
     const [tipo, setTipo] = useState('')
     const [termo, setTermo] = useState('')
-    const [termoDebounced, setTermoDebounced] = useState('') // Para evitar requisições a cada tecla
+    const [termoDebounced, setTermoDebounced] = useState('')
 
-    // Paginação
     const [page, setPage] = useState(0)
     const [hasMore, setHasMore] = useState(true)
     const [totalElements, setTotalElements] = useState(0)
 
-    // Efeito de Debounce para o termo de busca
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setTermoDebounced(termo);
-        }, 500); // 500ms de espera
+    const observerTarget = useRef(null)
 
+    useEffect(() => {
+        const handler = setTimeout(() => setTermoDebounced(termo), 500);
         return () => clearTimeout(handler);
     }, [termo]);
 
-    // Sempre que um filtro (debounced) mudar, reseta a paginação e busca
-    useEffect(() => {
-        setPage(0)
-        setHasMore(true)
-        carregar(0, false)
-    }, [ano, tipo, termoDebounced])
+    const carregar = useCallback(async (paginaAtual, acumular = false) => {
+        if (loading || (!hasMore && acumular)) return;
 
-    async function carregar(paginaAtual, acumular = false) {
         setLoading(true)
         setErro(null)
         try {
             const data = await listarProposicoes({
-                ano,
+                ano: ano || undefined,
                 tipo: tipo || undefined,
                 termo: termoDebounced || undefined,
                 page: paginaAtual,
@@ -54,17 +45,36 @@ export default function Proposicoes() {
 
             setTotalElements(data.totalElements)
             setHasMore(!data.last)
+            setPage(paginaAtual)
         } catch (e) {
-            setErro('Não foi possível carregar as proposições. Tente novamente.')
+            setErro('Não foi possível carregar as proposições.')
         } finally {
             setLoading(false)
         }
-    }
+    }, [ano, tipo, termoDebounced, loading, hasMore])
+
+    useEffect(() => {
+        setPage(0)
+        setHasMore(true)
+        carregar(0, false)
+    }, [ano, tipo, termoDebounced, carregar])
+
+    // Scroll Infinito
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting && hasMore && !loading) {
+                    carregar(page + 1, true)
+                }
+            },
+            { threshold: 1.0 }
+        )
+        if (observerTarget.current) observer.observe(observerTarget.current)
+        return () => observer.disconnect()
+    }, [hasMore, loading, page, carregar])
 
     const handleCarregarMais = () => {
-        const nextPage = page + 1
-        setPage(nextPage)
-        carregar(nextPage, true)
+        carregar(page + 1, true)
     }
 
     const truncarEmenta = (texto, limite = 150) => {
@@ -84,7 +94,6 @@ export default function Proposicoes() {
                 <span style={{ color: '#475569', fontSize: '0.9rem' }}>Total encontrado: <strong>{totalElements}</strong></span>
             </div>
 
-            {/* BARRA DE FILTROS */}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'flex-end', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div>
                     <label htmlFor="filtro-tipo" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Tipo</label>
@@ -96,7 +105,8 @@ export default function Proposicoes() {
                 </div>
                 <div>
                     <label htmlFor="filtro-ano" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Ano</label>
-                    <select id="filtro-ano" value={ano} onChange={e => setAno(Number(e.target.value))} style={{ padding: '0.55rem' }}>
+                    <select id="filtro-ano" value={ano} onChange={e => setAno(e.target.value)} style={{ padding: '0.55rem' }}>
+                        <option value="">Todos os Anos</option>
                         {[2026, 2025, 2024, 2023].map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
                 </div>
@@ -122,12 +132,7 @@ export default function Proposicoes() {
                             <h3 style={{ margin: 0, color: '#1e293b' }}>
                                 {prop.siglaTipo} {prop.numero}/{prop.ano}
                             </h3>
-                            <a
-                                href={`https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${prop.id}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none', fontWeight: 'bold' }}
-                            >
+                            <a href={`https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${prop.id}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none', fontWeight: 'bold' }}>
                                 Ver no site da Câmara ↗
                             </a>
                         </div>
@@ -140,24 +145,16 @@ export default function Proposicoes() {
 
             <div style={{ textAlign: 'center', marginTop: '2rem', paddingBottom: '2rem' }}>
                 {loading && <p style={{ color: '#2563eb' }}>Buscando proposições...</p>}
-
                 {!loading && hasMore && proposicoes.length > 0 && (
-                    <button
-                        onClick={handleCarregarMais}
-                        style={{ padding: '0.75rem 2rem', backgroundColor: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                    >
+                    <button onClick={handleCarregarMais} style={{ padding: '0.75rem 2rem', backgroundColor: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
                         Carregar Mais
                     </button>
                 )}
-
-                {!loading && !hasMore && proposicoes.length > 0 && (
-                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Fim da lista.</p>
-                )}
-
-                {!loading && proposicoes.length === 0 && !erro && (
-                    <p style={{ color: '#64748b' }}>Nenhuma proposição encontrada para estes filtros.</p>
-                )}
+                {!loading && !hasMore && proposicoes.length > 0 && <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Fim da lista.</p>}
+                {!loading && proposicoes.length === 0 && !erro && <p style={{ color: '#64748b' }}>Nenhuma proposição encontrada para estes filtros.</p>}
             </div>
+
+            <div ref={observerTarget} style={{ height: '10px' }}></div>
         </main>
     )
 }

@@ -50,8 +50,15 @@ public interface VotacaoRepository extends JpaRepository<Votacao, String> {
             "WHERE v.id = m.votacao_id AND v.proposicao_id IS NULL", nativeQuery = true)
     int aplicarVinculosManuais();
 
-    @Query("SELECT v FROM Votacao v JOIN Proposicao p ON v.proposicaoId = p.id WHERE p.codTipo IN (136, 139)")
-    Page<Votacao> findPecPl(Pageable pageable);
+    @Query("SELECT v FROM Votacao v JOIN Proposicao p ON v.proposicaoId = p.id " +
+            "WHERE p.codTipo IN (136, 139) " +
+            "AND (:ano IS NULL OR YEAR(v.data) = :ano) " +
+            "AND (:tipo IS NULL OR :tipo = '' OR p.siglaTipo = :tipo) " +
+            "AND (:descricao IS NULL OR :descricao = '' OR LOWER(v.descricao) LIKE LOWER(CONCAT('%', :descricao, '%')))")
+    Page<Votacao> findPecPl(@Param("ano") Integer ano,
+                            @Param("tipo") String tipo,
+                            @Param("descricao") String descricao,
+                            Pageable pageable);
 
     @Modifying
     @Transactional

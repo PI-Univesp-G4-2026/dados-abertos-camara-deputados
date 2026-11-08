@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useState, Fragment, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { listarVotacoesPecPl, obterDetalheVotacao } from '../services/api'
 
@@ -9,19 +9,36 @@ export default function Votacoes() {
     const [hasMore, setHasMore] = useState(true)
     const [totalElements, setTotalElements] = useState(0)
 
-    // Para o painel expandido
+    // Filtros
+    const [ano, setAno] = useState('')
+    const [tipo, setTipo] = useState('')
+    const [termo, setTermo] = useState('')
+    const [termoDebounced, setTermoDebounced] = useState('')
+
+    // Painel expandido
     const [expandido, setExpandido] = useState(null)
     const [detalhe, setDetalhe] = useState(null)
     const [loadingDetalhe, setLoadingDetalhe] = useState(false)
 
-    useEffect(() => {
-        carregarVotacoes(0, false)
-    }, [])
+    const observerTarget = useRef(null)
 
-    async function carregarVotacoes(paginaAtual, acumular = false) {
+    // Debounce para o termo de busca
+    useEffect(() => {
+        const handler = setTimeout(() => setTermoDebounced(termo), 500)
+        return () => clearTimeout(handler)
+    }, [termo])
+
+    const carregarVotacoes = useCallback(async (paginaAtual, acumular = false) => {
+        if (loading || (!hasMore && acumular)) return
         setLoading(true)
         try {
-            const data = await listarVotacoesPecPl({ page: paginaAtual, size: 15 })
+            const data = await listarVotacoesPecPl({
+                ano: ano || undefined,
+                tipo: tipo || undefined,
+                descricao: termoDebounced || undefined,
+                page: paginaAtual,
+                size: 15
+            })
             if (acumular) {
                 setVotacoes(prev => [...prev, ...data.content])
             } else {
@@ -35,7 +52,28 @@ export default function Votacoes() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [ano, tipo, termoDebounced, loading, hasMore])
+
+    // Resetar e buscar ao mudar filtros
+    useEffect(() => {
+        setPage(0)
+        setHasMore(true)
+        carregarVotacoes(0, false)
+    }, [ano, tipo, termoDebounced, carregarVotacoes])
+
+    // Scroll Infinito
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting && hasMore && !loading) {
+                    carregarVotacoes(page + 1, true)
+                }
+            },
+            { threshold: 1.0 }
+        )
+        if (observerTarget.current) observer.observe(observerTarget.current)
+        return () => observer.disconnect()
+    }, [hasMore, loading, page, carregarVotacoes])
 
     const handleCarregarMais = () => {
         carregarVotacoes(page + 1, true)
@@ -47,11 +85,9 @@ export default function Votacoes() {
             setDetalhe(null)
             return
         }
-
         setExpandido(votacaoId)
         setDetalhe(null)
         setLoadingDetalhe(true)
-
         try {
             const data = await obterDetalheVotacao(votacaoId)
             setDetalhe(data)
@@ -72,7 +108,36 @@ export default function Votacoes() {
                 <h1 style={{ margin: 0 }}>Painel de Votações (PECs e PLs)</h1>
                 <span style={{ color: '#475569', fontSize: '0.9rem' }}>Total: <strong>{totalElements}</strong></span>
             </div>
-            <p style={{ color: '#475569', marginBottom: '2rem' }}>Acompanhe as votações em plenário das Propostas de Emenda à Constituição e Projetos de Lei. Clique em uma linha para ver o placar.</p>
+
+            {/* FILTROS */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'flex-end', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <div>
+                    <label htmlFor="filtro-tipo" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Tipo</label>
+                    <select id="filtro-tipo" value={tipo} onChange={e => setTipo(e.target.value)} style={{ padding: '0.55rem' }}>
+                        <option value="">Todos (PL e PEC)</option>
+                        <option value="PL">Projeto de Lei (PL)</option>
+                        <option value="PEC">Proposta de Emenda (PEC)</option>
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="filtro-ano" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Ano</label>
+                    <select id="filtro-ano" value={ano} onChange={e => setAno(e.target.value)} style={{ padding: '0.55rem' }}>
+                        <option value="">Todos os Anos</option>
+                        {[2026, 2025, 2024, 2023].map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                </div>
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                    <label htmlFor="filtro-termo" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Buscar na Descrição</label>
+                    <input
+                        id="filtro-termo"
+                        type="text"
+                        placeholder="Ex: escala 6x1, urgência..."
+                        value={termo}
+                        onChange={e => setTermo(e.target.value)}
+                        style={{ padding: '0.55rem', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                    />
+                </div>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {votacoes.map(v => (
@@ -115,7 +180,16 @@ export default function Votacoes() {
                         {expandido === v.id && (
                             <div style={{ padding: '1.5rem', background: '#ffffff', border: '1px solid #bfdbfe', borderTop: 'none', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px', marginTop: '-0.5rem', zIndex: -1 }}>
                                 {loadingDetalhe && <p style={{ color: '#2563eb' }}>Buscando placar...</p>}
-                                {detalhe && (
+
+                                {detalhe && detalhe.totalVotos === 0 && (
+                                    <div style={{ padding: '1rem', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', color: '#92400e' }}>
+                                        {detalhe.votosCarregados
+                                            ? "Esta foi uma votação simbólica ou não possui registro nominal de votos individuais."
+                                            : "Os votos desta votação ainda estão pendentes de sincronização no sistema."}
+                                    </div>
+                                )}
+
+                                {detalhe && detalhe.totalVotos > 0 && (
                                     <div>
                                         <h4 style={{ margin: '0 0 1rem 0', color: '#1e293b' }}>Placar Geral</h4>
                                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -151,6 +225,8 @@ export default function Votacoes() {
                     <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Fim da lista.</p>
                 )}
             </div>
+
+            <div ref={observerTarget} style={{ height: '10px' }}></div>
         </main>
     )
 }

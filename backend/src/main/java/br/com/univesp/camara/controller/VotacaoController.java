@@ -99,6 +99,21 @@ public class VotacaoController {
         return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/pec-pl")
+    public Page<VotacaoDto> listarPecPl(
+            @RequestParam(required = false) Integer ano,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String descricao,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        var pageable = PageRequest.of(page, Math.min(size, 100), Sort.by("dataHoraRegistro").descending());
+        String tipoFiltro = (tipo != null && !tipo.isBlank()) ? tipo.trim().toUpperCase(Locale.ROOT) : null;
+        String busca = (descricao != null && !descricao.isBlank()) ? descricao.trim() : null;
+
+        return votacaoRepo.findPecPl(ano, tipoFiltro, busca, pageable).map(VotacaoDto::from);
+    }
+
     private String orientacaoPartido(List<OrientacaoDto> orientacoes, String siglaPartido) {
         if (siglaPartido == null) return null;
         return orientacoes.stream()
@@ -110,13 +125,6 @@ public class VotacaoController {
                 .orElse("Liberado"); // Se não achar nada, assume que estava liberado
     }
 
-    @GetMapping("/pec-pl")
-    public Page<VotacaoDto> listarPecPl(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
 
-        var pageable = PageRequest.of(page, Math.min(size, 100), Sort.by("dataHoraRegistro").descending());
-        return votacaoRepo.findPecPl(pageable).map(VotacaoDto::from);
-    }
 }
 
