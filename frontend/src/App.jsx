@@ -4,6 +4,7 @@ import FichaDeputado from './pages/FichaDeputado'
 import DashboardPartidos from './pages/DashboardPartidos'
 import Proposicoes from './pages/Proposicoes'
 import Votacoes from './pages/Votacoes'
+import Temas from './pages/Temas'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
             <Route path="/partidos" element={<DashboardPartidos />} />
             <Route path="/proposicoes" element={<Proposicoes />} />
             <Route path="/votacoes" element={<Votacoes />} />
+            <Route path="/temas" element={<Temas />} />
           </Routes>
         </div>
       </BrowserRouter>

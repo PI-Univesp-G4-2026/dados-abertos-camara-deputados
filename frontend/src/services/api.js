@@ -46,3 +46,10 @@ export const listarVotacoesPecPl = (params) =>
 
 export const obterDetalheVotacao = (id) =>
     api.get(`/votacoes/${id}`).then(r => r.data)
+
+// --- TEMAS ---
+export const listarTemas = () =>
+    api.get('/temas').then(r => r.data)
+
+export const listarVotacoesPorTema = (cod, params) =>
+    api.get(`/temas/${cod}/votacoes`, { params }).then(r => r.data)

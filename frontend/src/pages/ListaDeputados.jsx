@@ -121,6 +121,9 @@ export default function ListaDeputados() {
                     <Link to="/votacoes" style={{ backgroundColor: '#f59e0b', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
                         Painel de Votações
                     </Link>
+                    <Link to="/temas" style={{ backgroundColor: '#8b5cf6', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        Painel de Temas
+                    </Link>
                     <Link to="/proposicoes" style={{ backgroundColor: '#059669', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
                         Ver Proposições (PECs/PLs)
                     </Link>
