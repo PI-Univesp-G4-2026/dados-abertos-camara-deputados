@@ -21,9 +21,7 @@ public interface VotacaoRepository extends JpaRepository<Votacao, String> {
 
     Page<Votacao> findAllByOrderByDataHoraRegistroDesc(Pageable pageable);
 
-    @Query("SELECT v FROM Votacao v WHERE v.votosCarregados = false " +
-            "AND v.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.codTipo IN (135, 136, 139, 140)) " +
-            "ORDER BY v.dataHoraRegistro DESC")
+    @Query("SELECT v FROM Votacao v WHERE v.votosCarregados = false ORDER BY v.dataHoraRegistro DESC")
     List<Votacao> findByVotosCarregadosFalseOrderByDataDesc(Pageable pageable);
 
     Optional<Votacao> findTopByOrderByDataHoraRegistroDesc();
@@ -62,6 +60,6 @@ public interface VotacaoRepository extends JpaRepository<Votacao, String> {
 
     @Modifying
     @Transactional
-    @Query("UPDATE Votacao v SET v.votosCarregados = false WHERE v.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.codTipo IN (135, 136, 139, 140))")
-    void resetarVotosCarregadosPecPl();
+    @Query("UPDATE Votacao v SET v.votosCarregados = false")
+    void resetarTodosOsVotosCarregados();
 }

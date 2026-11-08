@@ -130,7 +130,7 @@ export default function Votacoes() {
                 <div>
                     <label htmlFor="filtro-tipo" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Tipo</label>
                     <select id="filtro-tipo" value={tipo} onChange={e => setTipo(e.target.value)} style={{ padding: '0.55rem' }}>
-                        <option value="">Todos (PL e PEC)</option>
+                        <option value="">Todos</option>
                         <option value="PL">Projeto de Lei (PL)</option>
                         <option value="PEC">Proposta de Emenda (PEC)</option>
                         <option value="PLP">Projeto de Lei Complementar (PLP)</option>

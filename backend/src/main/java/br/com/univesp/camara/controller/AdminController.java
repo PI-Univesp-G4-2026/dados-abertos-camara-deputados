@@ -199,7 +199,7 @@ public class AdminController {
 
     @PostMapping("/etl/votos/reset")
     public ResponseEntity<Map<String, Object>> resetarVotos() {
-        votacaoRepo.resetarVotosCarregadosPecPl();
-        return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Votações de PEC/PL marcadas para reprocessamento."));
+        votacaoRepo.resetarTodosOsVotosCarregados();
+        return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Todas as votações foram marcadas para reprocessamento."));
     }
 }

@@ -216,9 +216,13 @@ export default function FichaDeputado() {
                     <div>
                         <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Tipo</label>
                         <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={{ padding: '0.4rem' }}>
-                            <option value="">Todos</option>
+                            <option value="">Todos os Tipos</option>
                             <option value="PL">PL (Projeto de Lei)</option>
                             <option value="PEC">PEC (Emenda Constitucional)</option>
+                            <option value="PLP">PLP (Lei Complementar)</option>
+                            <option value="PDC">PDC (Decreto Legislativo)</option>
+                            <option value="REQ">REQ (Requerimento)</option>
+                            <option value="RCP">RCP (Requerimento de CPI)</option>
                         </select>
                     </div>
                     <div style={{ flex: 1, minWidth: '200px' }}>
