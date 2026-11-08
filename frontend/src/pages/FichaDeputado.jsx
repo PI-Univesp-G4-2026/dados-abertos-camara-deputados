@@ -5,32 +5,36 @@ import {
     LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts'
 import { obterDeputado, resumoDespesas, resumoVotosDeputado, listarVotosDeputado } from '../services/api'
-
 import RaioXVotacao from "./RaioXVotacao.jsx";
 
 const getCorVoto = (tipoVoto) => {
-    if (tipoVoto === 'Sim') return '#16a34a';      // Verde
-    if (tipoVoto === 'Não') return '#dc2626';      // Vermelho
-    if (tipoVoto === 'Abstenção') return '#ca8a04'; // Amarelo
-    return '#64748b';                              // Cinza (Outros)
+    if (tipoVoto === 'Sim') return '#16a34a';
+    if (tipoVoto === 'Não') return '#dc2626';
+    if (tipoVoto === 'Abstenção') return '#ca8a04';
+    return '#64748b';
 }
 
 export default function FichaDeputado() {
     const { id } = useParams()
     const [deputado, setDeputado] = useState(null)
-
-    // Estados de Despesas
     const [resumoDesp, setResumoDesp] = useState(null)
     const [ano, setAno] = useState(new Date().getFullYear())
-
-    // Estados de Votações
     const [resumoVotos, setResumoVotos] = useState(null)
-    const [ultimosVotos, setUltimosVotos] = useState([])
+    const [erro, setErro] = useState(null)
 
-    // Estado para controlar qual linha da tabela está expandida
+    // Estados da Tabela de Votos
+    const [votos, setVotos] = useState([])
+    const [loadingVotos, setLoadingVotos] = useState(false)
+    const [page, setPage] = useState(0)
+    const [hasMore, setHasMore] = useState(true)
+    const [totalElements, setTotalElements] = useState(0)
     const [votoExpandido, setVotoExpandido] = useState(null)
 
-    const [erro, setErro] = useState(null)
+    // Filtros de Votos
+    const [filtroDataInicio, setFiltroDataInicio] = useState('')
+    const [filtroDataFim, setFiltroDataFim] = useState('')
+    const [filtroTipo, setFiltroTipo] = useState('')
+    const [filtroNome, setFiltroNome] = useState('')
 
     useEffect(() => {
         obterDeputado(id)
@@ -44,64 +48,77 @@ export default function FichaDeputado() {
 
     useEffect(() => {
         resumoVotosDeputado(id).then(setResumoVotos).catch(() => {})
-        listarVotosDeputado(id, { size: 10 }).then(data => setUltimosVotos(data.content || [])).catch(() => {})
     }, [id])
 
-    if (erro) return <p role="alert" style={{ padding: '2rem', color: 'red' }}>{erro}</p>
-    if (!deputado) return <p aria-live="polite" style={{ padding: '2rem' }}>Carregando...</p>
+    // Efeito para carregar os votos (toda vez que um filtro mudar ou a página mudar)
+    useEffect(() => {
+        setPage(0);
+        setHasMore(true);
+        carregarVotos(0, false);
+    }, [id, filtroDataInicio, filtroDataFim, filtroTipo, filtroNome]);
 
-    // Prepara dados para o gráfico de pizza de votos
-    const dadosPizza = resumoVotos?.porTipo?.map(item => ({
-        name: item.tipoVoto,
-        value: item.total
-    })) || []
+    async function carregarVotos(paginaAtual, acumular = false) {
+        setLoadingVotos(true);
+        try {
+            const data = await listarVotosDeputado(id, {
+                page: paginaAtual,
+                size: 10,
+                dataInicio: filtroDataInicio || undefined,
+                dataFim: filtroDataFim || undefined,
+                tipo: filtroTipo || undefined,
+                descricao: filtroNome || undefined
+            });
 
-    // Função para renderizar a etiqueta colorida na ficha
+            if (acumular) {
+                setVotos(prev => [...prev, ...(data.content || [])]);
+            } else {
+                setVotos(data.content || []);
+            }
+            setTotalElements(data.totalElements || 0);
+            setHasMore(!data.last);
+        } catch (e) {
+            console.error("Erro ao carregar votos", e);
+        } finally {
+            setLoadingVotos(false);
+        }
+    }
+
+    const handleCarregarMaisVotos = () => {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        carregarVotos(nextPage, true);
+    }
+
     const renderBadge = (situacaoDep) => {
         if (!situacaoDep) return null;
-
-        let corFundo = '#f1f5f9'; // Cinza (Suplência)
-        let corTexto = '#475569';
-
-        if (situacaoDep === 'Exercício' || situacaoDep === 'Convocado') {
-            corFundo = '#dcfce7'; // Verde (Ativos)
-            corTexto = '#166534';
-        } else if (situacaoDep === 'Licença') {
-            corFundo = '#fef08a'; // Amarelo (Licença temporária)
-            corTexto = '#854d0e';
-        } else if (['Vacância', 'Fim de Mandato', 'Afastado', 'Suspenso'].includes(situacaoDep)) {
-            corFundo = '#fee2e2'; // Vermelho (Inativos/Saíram)
-            corTexto = '#991b1b';
-        }
-
+        let corFundo = '#f1f5f9'; let corTexto = '#475569';
+        if (situacaoDep === 'Exercício' || situacaoDep === 'Convocado') { corFundo = '#dcfce7'; corTexto = '#166534'; }
+        else if (situacaoDep === 'Licença') { corFundo = '#fef08a'; corTexto = '#854d0e'; }
+        else if (['Vacância', 'Fim de Mandato', 'Afastado', 'Suspenso'].includes(situacaoDep)) { corFundo = '#fee2e2'; corTexto = '#991b1b'; }
         return (
-            <span style={{
-                backgroundColor: corFundo,
-                color: corTexto,
-                padding: '4px 12px',
-                borderRadius: '16px',
-                fontSize: '0.85rem',
-                fontWeight: 'bold',
-                display: 'inline-block'
-            }}>
+            <span style={{ backgroundColor: corFundo, color: corTexto, padding: '4px 12px', borderRadius: '16px', fontSize: '0.85rem', fontWeight: 'bold', display: 'inline-block' }}>
                 {situacaoDep}
             </span>
         );
     }
 
+    if (erro) return <p role="alert" style={{ padding: '2rem', color: 'red' }}>{erro}</p>
+    if (!deputado) return <p aria-live="polite" style={{ padding: '2rem' }}>Carregando...</p>
+
+    const dadosPizza = resumoVotos?.porTipo?.map(item => ({ name: item.tipoVoto, value: item.total })) || []
+
     return (
         <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-            <Link to="/">← Voltar</Link>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <Link to="/" style={{ display: 'inline-block', marginBottom: '1.5rem', color: '#2563eb', textDecoration: 'none' }}>← Voltar</Link>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
                 <h1 style={{ margin: 0 }}>{deputado.nome}</h1>
                 {renderBadge(deputado.situacao)}
             </div>
 
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', marginBottom: '2rem' }}>
-                {deputado.urlFoto && (
-                    <img src={deputado.urlFoto} alt={`Foto de ${deputado.nome}`} width={160} style={{ borderRadius: '4px' }} />
-                )}
-                <dl>
+                {deputado.urlFoto && <img src={deputado.urlFoto} alt={`Foto de ${deputado.nome}`} width={160} style={{ borderRadius: '4px' }} />}
+                <dl style={{ margin: 0 }}>
                     <dt><strong>Partido</strong></dt><dd>{deputado.siglaPartido}</dd>
                     <dt><strong>UF</strong></dt><dd>{deputado.siglaUf}</dd>
                     <dt><strong>E-mail</strong></dt><dd>{deputado.email}</dd>
@@ -116,7 +133,6 @@ export default function FichaDeputado() {
                     {[2023, 2024, 2025, 2026].map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
 
-                {/* Gráfico de Barras - Por Tipo */}
                 {resumoDesp?.porTipo?.length > 0 ? (
                     <>
                         <h3>Gastos por Categoria</h3>
@@ -132,7 +148,6 @@ export default function FichaDeputado() {
                     </>
                 ) : <p>Sem despesas registradas para este ano.</p>}
 
-                {/* Gráfico de Linhas - Evolução Mensal (O que tínhamos perdido) */}
                 {resumoDesp?.mensal?.length > 0 && (
                     <div style={{ marginTop: '2rem' }}>
                         <h3>Evolução Mensal</h3>
@@ -160,9 +175,7 @@ export default function FichaDeputado() {
                             <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie data={dadosPizza} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                        {dadosPizza.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={getCorVoto(entry.name)} />
-                                        ))}
+                                        {dadosPizza.map((entry, index) => <Cell key={`cell-${index}`} fill={getCorVoto(entry.name)} />)}
                                     </Pie>
                                     <Tooltip />
                                     <Legend />
@@ -172,10 +185,38 @@ export default function FichaDeputado() {
                     </div>
                 )}
 
-                <h3>Últimos Votos Registrados</h3>
+                <h3>Histórico de Votos</h3>
                 <p style={{ fontSize: '0.9rem', color: '#666' }}>Clique em uma linha para ver o Raio-X da votação.</p>
 
-                {ultimosVotos.length > 0 ? (
+                {/* FILTROS DE VOTOS */}
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>De (Data)</label>
+                        <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)} style={{ padding: '0.4rem' }} />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Até (Data)</label>
+                        <input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)} style={{ padding: '0.4rem' }} />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Tipo</label>
+                        <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={{ padding: '0.4rem' }}>
+                            <option value="">Todos</option>
+                            <option value="PL">PL (Projeto de Lei)</option>
+                            <option value="PEC">PEC (Emenda Constitucional)</option>
+                        </select>
+                    </div>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Buscar na Descrição</label>
+                        <input type="text" placeholder="Ex: escala 6x1..." value={filtroNome} onChange={e => setFiltroNome(e.target.value)} style={{ padding: '0.4rem', width: '100%' }} />
+                    </div>
+                </div>
+
+                <div style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '0.5rem' }}>
+                    Encontrados: <strong>{totalElements}</strong> votos.
+                </div>
+
+                {votos.length > 0 ? (
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                             <thead>
@@ -186,23 +227,18 @@ export default function FichaDeputado() {
                             </tr>
                             </thead>
                             <tbody>
-                            {ultimosVotos.map(v => (
+                            {votos.map(v => (
                                 <Fragment key={v.votacaoId}>
                                     <tr
                                         onClick={() => setVotoExpandido(votoExpandido === v.votacaoId ? null : v.votacaoId)}
-                                        style={{
-                                            borderBottom: '1px solid #eee',
-                                            cursor: 'pointer',
-                                            backgroundColor: votoExpandido === v.votacaoId ? '#eff6ff' : 'transparent'
-                                        }}
+                                        style={{ borderBottom: '1px solid #eee', cursor: 'pointer', backgroundColor: votoExpandido === v.votacaoId ? '#eff6ff' : 'transparent' }}
                                     >
                                         <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{v.dataVotacao}</td>
                                         <td style={{ padding: '8px' }}>{v.descricao}</td>
-                                        <td style={{ padding: '8px', fontWeight: 'bold', color: v.tipoVoto === 'Sim' ? '#16a34a' : v.tipoVoto === 'Não' ? '#dc2626' : '#ca8a04' }}>
+                                        <td style={{ padding: '8px', fontWeight: 'bold', color: getCorVoto(v.tipoVoto) }}>
                                             {v.tipoVoto}
                                         </td>
                                     </tr>
-                                    {/* Renderiza o Raio-X se a linha estiver expandida */}
                                     {votoExpandido === v.votacaoId && (
                                         <tr>
                                             <td colSpan="3" style={{ padding: 0 }}>
@@ -214,8 +250,20 @@ export default function FichaDeputado() {
                             ))}
                             </tbody>
                         </table>
+
+                        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+                            {loadingVotos && <p style={{ color: '#2563eb' }}>Carregando votos...</p>}
+                            {!loadingVotos && hasMore && (
+                                <button onClick={handleCarregarMaisVotos} style={{ padding: '0.5rem 1.5rem', cursor: 'pointer' }}>
+                                    Carregar Mais Votos
+                                </button>
+                            )}
+                            {!loadingVotos && !hasMore && <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Fim dos votos registrados.</p>}
+                        </div>
                     </div>
-                ) : <p>Nenhuma votação registrada para este deputado.</p>}
+                ) : (
+                    <p>{loadingVotos ? 'Buscando votos...' : 'Nenhum voto encontrado para estes filtros.'}</p>
+                )}
             </section>
         </main>
     )

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface VotoRepository extends JpaRepository<Voto, Long> {
@@ -35,6 +36,18 @@ public interface VotoRepository extends JpaRepository<Voto, Long> {
     @Query("DELETE FROM Voto v WHERE v.votacao.id = :votacaoId")
     void deleteByVotacaoId(@Param("votacaoId") String votacaoId);
 
-    // Busca o voto de um deputado específico em uma votação específica
     List<Voto> findByVotacaoIdAndDeputadoId(String votacaoId, Long deputadoId);
+
+    @Query("SELECT v FROM Voto v JOIN v.votacao vt " +
+            "WHERE v.deputado.id = :deputadoId " +
+            "AND (:dataInicio IS NULL OR vt.data >= :dataInicio) " +
+            "AND (:dataFim IS NULL OR vt.data <= :dataFim) " +
+            "AND (:descricao IS NULL OR :descricao = '' OR LOWER(vt.descricao) LIKE LOWER(CONCAT('%', :descricao, '%'))) " +
+            "AND (:tipo IS NULL OR :tipo = '' OR vt.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.siglaTipo = :tipo))")
+    Page<Voto> buscarComFiltros(@Param("deputadoId") Long deputadoId,
+                                @Param("dataInicio") LocalDate dataInicio,
+                                @Param("dataFim") LocalDate dataFim,
+                                @Param("descricao") String descricao,
+                                @Param("tipo") String tipo,
+                                Pageable pageable);
 }
