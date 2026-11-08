@@ -24,7 +24,6 @@ export default function Temas() {
     // Efeito para rolar a tela automaticamente quando um tema for selecionado
     useEffect(() => {
         if (temaSelecionado && resultadosRef.current) {
-            // Um pequeno timeout para garantir que o React renderizou a div antes de rolar
             setTimeout(() => {
                 resultadosRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }, 100)
@@ -49,8 +48,13 @@ export default function Temas() {
         }
     }
 
+    // Função para voltar ao topo
+    const handleVoltarAoTopo = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
     return (
-        <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto', position: 'relative' }}>
+        <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
             <Link to="/" style={{ display: 'inline-block', marginBottom: '1.5rem', color: '#2563eb', textDecoration: 'none' }}>
                 ← Voltar para Deputados
             </Link>
@@ -86,13 +90,36 @@ export default function Temas() {
             </div>
 
             {/* PAINEL DE VOTAÇÕES DO TEMA SELECIONADO */}
-            {/* A ref={resultadosRef} é o que permite a rolagem automática */}
             <section ref={resultadosRef} style={{ borderTop: '2px solid #e2e8f0', paddingTop: '2rem', scrollMarginTop: '2rem' }}>
                 {temaSelecionado && (
                     <>
-                        <h2 style={{ margin: '0 0 1rem 0', color: '#1e293b' }}>
-                            Votações sobre: {temaSelecionado.nome}
-                        </h2>
+                        {/* CABEÇALHO DO RESULTADO COM O BOTÃO VOLTAR AO TOPO */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                            <h2 style={{ margin: 0, color: '#1e293b' }}>
+                                Votações sobre: {temaSelecionado.nome}
+                            </h2>
+                            <button
+                                onClick={handleVoltarAoTopo}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    backgroundColor: '#f1f5f9',
+                                    color: '#1e293b',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.9rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    transition: 'background-color 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.backgroundColor = '#e2e8f0'}
+                                onMouseLeave={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                            >
+                                ↑ Voltar ao topo
+                            </button>
+                        </div>
 
                         {loadingVotacoes && <p>Carregando votações...</p>}
 
@@ -111,36 +138,6 @@ export default function Temas() {
                     </>
                 )}
             </section>
-
-            {/* BOTÃO FLUTUANTE: VOLTAR AO TOPO */}
-            <button
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                aria-label="Voltar ao topo da página"
-                title="Voltar ao topo"
-                style={{
-                    position: 'fixed',
-                    bottom: '2rem',
-                    right: '2rem',
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '50%',
-                    backgroundColor: '#2563eb',
-                    color: 'white',
-                    border: 'none',
-                    fontSize: '1.5rem',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
-            >
-                ↑
-            </button>
         </main>
     )
 }
