@@ -36,3 +36,6 @@ export const obterEstatisticasPartidos = () =>
 
 export const obterDetalheProposicao = (proposicaoId) =>
     api.get(`/proposicoes/${proposicaoId}`).then(r => r.data)
+
+export const listarProposicoes = (params) =>
+    api.get('/proposicoes', { params }).then(r => r.data)

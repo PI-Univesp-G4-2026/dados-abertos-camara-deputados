@@ -116,9 +116,15 @@ export default function ListaDeputados() {
         <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h1 style={{ margin: 0 }}>Deputados Federais {partidoFiltro && `- ${partidoFiltro}`}</h1>
-                <Link to="/partidos" style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    Ver Painel de Partidos →
-                </Link>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <Link to="/proposicoes" style={{ backgroundColor: '#059669', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        Ver Proposições (PECs/PLs)
+                    </Link>
+                    <Link to="/partidos" style={{ backgroundColor: '#2563eb', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        Ver Painel de Partidos →
+                    </Link>
+                </div>
             </div>
 
             {partidoFiltro && (
