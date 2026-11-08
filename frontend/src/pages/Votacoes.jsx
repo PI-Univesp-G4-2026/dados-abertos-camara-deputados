@@ -122,7 +122,7 @@ export default function Votacoes() {
             </Link>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h1 style={{ margin: 0 }}>Painel de Votações (PECs e PLs)</h1>
+                <h1 style={{ margin: 0 }}>Painel de Votações (Principais Proposições)</h1>
                 <span style={{ color: '#475569', fontSize: '0.9rem' }}>Total: <strong>{totalElements}</strong></span>
             </div>
 
@@ -133,6 +133,8 @@ export default function Votacoes() {
                         <option value="">Todos (PL e PEC)</option>
                         <option value="PL">Projeto de Lei (PL)</option>
                         <option value="PEC">Proposta de Emenda (PEC)</option>
+                        <option value="PLP">Projeto de Lei Complementar (PLP)</option>
+                        <option value="PDC">Projeto de Decreto Legislativo (PDC)</option>
                     </select>
                 </div>
                 <div>

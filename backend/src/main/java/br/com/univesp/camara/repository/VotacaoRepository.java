@@ -22,7 +22,7 @@ public interface VotacaoRepository extends JpaRepository<Votacao, String> {
     Page<Votacao> findAllByOrderByDataHoraRegistroDesc(Pageable pageable);
 
     @Query("SELECT v FROM Votacao v WHERE v.votosCarregados = false " +
-            "AND v.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.codTipo IN (136, 139)) " +
+            "AND v.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.codTipo IN (135, 136, 139, 140)) " +
             "ORDER BY v.dataHoraRegistro DESC")
     List<Votacao> findByVotosCarregadosFalseOrderByDataDesc(Pageable pageable);
 
@@ -51,7 +51,7 @@ public interface VotacaoRepository extends JpaRepository<Votacao, String> {
     int aplicarVinculosManuais();
 
     @Query("SELECT v FROM Votacao v JOIN Proposicao p ON v.proposicaoId = p.id " +
-            "WHERE p.codTipo IN (136, 139) " +
+            "WHERE p.codTipo IN (135, 136, 139, 140) " +
             "AND (:ano IS NULL OR YEAR(v.data) = :ano) " +
             "AND (:tipo IS NULL OR :tipo = '' OR p.siglaTipo = :tipo) " +
             "AND (:descricao IS NULL OR :descricao = '' OR LOWER(v.descricao) LIKE LOWER(CONCAT('%', :descricao, '%')))")
@@ -62,6 +62,6 @@ public interface VotacaoRepository extends JpaRepository<Votacao, String> {
 
     @Modifying
     @Transactional
-    @Query("UPDATE Votacao v SET v.votosCarregados = false WHERE v.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.codTipo IN (136, 139))")
+    @Query("UPDATE Votacao v SET v.votosCarregados = false WHERE v.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.codTipo IN (135, 136, 139, 140))")
     void resetarVotosCarregadosPecPl();
 }

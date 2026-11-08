@@ -188,12 +188,12 @@ public class AdminController {
 
     @PostMapping("/etl/proposicoes/pec-pl")
     public ResponseEntity<Map<String, Object>> sincronizarPecPl(@RequestParam(defaultValue = "2026") int ano) {
-        // CodTipo 136 = PEC, 139 = PL
-        proposicaoEtlService.sincronizarProposicoesPorAnoETipos(ano, "136,139");
+        // 135=PDC, 136=PEC, 139=PL, 140=PLP
+        proposicaoEtlService.sincronizarProposicoesPorAnoETipos(ano, "135,136,139,140");
         return ResponseEntity.ok(Map.of(
                 "status", "ok",
                 "ano", ano,
-                "mensagem", "Sincronização de PECs e PLs concluída."
+                "mensagem", "Sincronização de PECs, PLs, PLPs e PDCs concluída."
         ));
     }
 

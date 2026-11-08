@@ -105,7 +105,7 @@ export default function Proposicoes() {
             </Link>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
-                <h1 style={{ margin: 0 }}>Proposições (PECs e PLs)</h1>
+                <h1 style={{ margin: 0 }}>Principais Proposições</h1>
                 <span style={{ color: '#475569', fontSize: '0.9rem' }}>Total encontrado: <strong>{totalElements}</strong></span>
             </div>
 
@@ -116,6 +116,8 @@ export default function Proposicoes() {
                         <option value="">Todos (PL e PEC)</option>
                         <option value="PL">Projeto de Lei (PL)</option>
                         <option value="PEC">Proposta de Emenda (PEC)</option>
+                        <option value="PLP">Projeto de Lei Complementar (PLP)</option>
+                        <option value="PDC">Projeto de Decreto Legislativo (PDC)</option>
                     </select>
                 </div>
                 <div>
