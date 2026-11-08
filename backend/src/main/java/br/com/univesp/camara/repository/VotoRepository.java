@@ -27,8 +27,9 @@ public interface VotoRepository extends JpaRepository<Voto, Long> {
             "GROUP BY v.tipoVoto ORDER BY COUNT(v) DESC")
     List<Object[]> placarPorVotacao (@Param("votacaoId") String votacaoId);
 
-    @Query("SELECT v.tipoVoto, COUNT(v) FROM Voto v " +
-            "WHERE v.deputado.id = :deputadoId "+
+    @Query("SELECT v.tipoVoto, COUNT(v) FROM Voto v JOIN v.votacao vt " +
+            "WHERE v.deputado.id = :deputadoId " +
+            "AND vt.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.codTipo IN (136, 139)) " +
             "GROUP BY v.tipoVoto ORDER BY COUNT(v) DESC")
     List<Object[]> placarPorDeputado (@Param("deputadoId") Long deputadoId);
 
