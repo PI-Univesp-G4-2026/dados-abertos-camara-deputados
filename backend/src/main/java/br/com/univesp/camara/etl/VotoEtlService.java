@@ -93,10 +93,11 @@ public class VotoEtlService {
         if (!votos.isEmpty()) {
             votoRepo.deleteByVotacaoId(votacao.getId());
             votoRepo.saveAll(votos);
-            votacaoRepo.marcarVotosCarregados(votacao.getId());
         } else {
-            System.out.println(">>> AVISO: API retornou 0 votos para " + votacao.getId() + ". Mantendo os votos antigos intactos.");
+            System.out.println(">>> AVISO: Votação simbólica/secreta ou sem dados (" + votacao.getId() + "). Pulando.");
         }
+
+        votacaoRepo.marcarVotosCarregados(votacao.getId());
 
         return new ResultadoVoto(votos.size(), ignorados);
     }
