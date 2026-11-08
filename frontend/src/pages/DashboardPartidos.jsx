@@ -2,31 +2,15 @@ import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { obterEstatisticasPartidos } from '../services/api'
 
-// Mapeamento de cores para os principais partidos brasileiros
 const CORES_PARTIDOS = {
-    'PL': '#1d4ed8',       // Azul Escuro
-    'PT': '#dc2626',       // Vermelho
-    'UNIÃO': '#f59e0b',    // Laranja
-    'PP': '#3b82f6',       // Azul Claro
-    'MDB': '#10b981',      // Verde
-    'PSD': '#8b5cf6',      // Roxo
-    'REPUBLICANOS': '#ec4899', // Rosa
-    'PDT': '#ef4444',      // Vermelho Escuro
-    'PSDB': '#0ea5e9',     // Azul Ciano
-    'PSOL': '#eab308',     // Amarelo
-    'NOVO': '#f97316',     // Laranja Escuro
-    'PODE': '#14b8a6',     // Verde Água
-    'AVANTE': '#84cc16',   // Verde Limão
-    'SOLIDARIEDADE': '#facc15', // Amarelo Ouro
-    'CIDADANIA': '#06b6d4', // Ciano
-    'PCdoB': '#b91c1c',    // Vinho
-    'PV': '#22c55e',       // Verde Claro
-    'REDE': '#15803d',     // Verde Escuro
-    'PSB': '#fbbf24',      // Amarelo
-    'PROS': '#f43f5e'      // Rosa Escuro
+    'PL': '#1d4ed8', 'PT': '#dc2626', 'UNIÃO': '#f59e0b', 'PP': '#3b82f6',
+    'MDB': '#10b981', 'PSD': '#8b5cf6', 'REPUBLICANOS': '#ec4899', 'PDT': '#ef4444',
+    'PSDB': '#0ea5e9', 'PSOL': '#eab308', 'NOVO': '#f97316', 'PODE': '#14b8a6',
+    'AVANTE': '#84cc16', 'SOLIDARIEDADE': '#facc15', 'CIDADANIA': '#06b6d4',
+    'PCdoB': '#b91c1c', 'PV': '#22c55e', 'REDE': '#15803d', 'PSB': '#fbbf24', 'PROS': '#f43f5e'
 }
 
-const getCorPartido = (sigla) => CORES_PARTIDOS[sigla] || '#64748b' // Cinza como fallback
+const getCorPartido = (sigla) => CORES_PARTIDOS[sigla] || '#64748b'
 
 export default function DashboardPartidos() {
     const [estatisticas, setEstatisticas] = useState([])
@@ -36,7 +20,6 @@ export default function DashboardPartidos() {
     useEffect(() => {
         obterEstatisticasPartidos()
             .then(data => {
-                // Ordena do maior para o menor
                 const sortedData = data.sort((a, b) => b.totalDeputados - a.totalDeputados)
                 setEstatisticas(sortedData)
                 setLoading(false)
@@ -47,7 +30,6 @@ export default function DashboardPartidos() {
             })
     }, [])
 
-    // Processa os dados para calcular o total e as porcentagens
     const { totalDeputados, dadosProcessados, arrayBolinhas } = useMemo(() => {
         if (!estatisticas.length) return { totalDeputados: 0, dadosProcessados: [], arrayBolinhas: [] }
 
@@ -59,11 +41,11 @@ export default function DashboardPartidos() {
             cor: getCorPartido(item.sigla)
         }))
 
-        // Cria um array com a cor de cada deputado para renderizar a grade de bolinhas
+        // Agora o array guarda a cor E a sigla para o tooltip
         const bolinhas = []
         processados.forEach(item => {
             for (let i = 0; i < item.totalDeputados; i++) {
-                bolinhas.push(item.cor)
+                bolinhas.push({ cor: item.cor, sigla: item.sigla })
             }
         })
 
@@ -90,12 +72,11 @@ export default function DashboardPartidos() {
                 <p style={{ textAlign: 'center', color: '#64748b' }}>Nenhum dado encontrado. Sincronize o banco de dados.</p>
             ) : (
                 <>
-                    {/* GRADE DE BOLINHAS (Representação visual) */}
                     <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '3rem' }}>
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(10px, 1fr))',
-                            gap: '4px',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(12px, 1fr))',
+                            gap: '5px',
                             maxWidth: '600px',
                             backgroundColor: '#f8fafc',
                             padding: '2rem',
@@ -103,16 +84,20 @@ export default function DashboardPartidos() {
                             border: '1px solid #e2e8f0',
                             justifyItems: 'center'
                         }}>
-                            {arrayBolinhas.map((cor, index) => (
+                            {arrayBolinhas.map((item, index) => (
                                 <div
                                     key={index}
-                                    title="Deputado"
+                                    title={`Partido: ${item.sigla}`} // Tooltip nativo com a sigla
                                     style={{
-                                        width: '10px',
-                                        height: '10px',
+                                        width: '12px',
+                                        height: '12px',
                                         borderRadius: '50%',
-                                        backgroundColor: cor
+                                        backgroundColor: item.cor,
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.2s'
                                     }}
+                                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.3)'}
+                                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                                 />
                             ))}
                         </div>
@@ -125,7 +110,6 @@ export default function DashboardPartidos() {
                         </div>
                     </section>
 
-                    {/* TABELA DETALHADA */}
                     <section aria-labelledby="titulo-tabela">
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
                             <thead>
@@ -140,7 +124,15 @@ export default function DashboardPartidos() {
                                 <tr key={item.sigla} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                     <td style={{ padding: '12px 8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: item.cor }} />
-                                        <strong style={{ fontSize: '1rem', color: '#1e293b' }}>{item.sigla}</strong>
+
+                                        {/* Link que envia o filtro do partido para a tela inicial */}
+                                        <Link
+                                            to={`/?partido=${item.sigla}`}
+                                            style={{ fontSize: '1rem', color: '#1e293b', fontWeight: 'bold', textDecoration: 'none', borderBottom: '1px dashed #94a3b8' }}
+                                            title={`Ver deputados do ${item.sigla}`}
+                                        >
+                                            {item.sigla}
+                                        </Link>
                                     </td>
                                     <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 'bold', fontSize: '1.1rem', color: '#1e293b' }}>
                                         {item.totalDeputados}
@@ -149,7 +141,6 @@ export default function DashboardPartidos() {
                                             <span style={{ fontWeight: 'bold', color: '#1e293b', width: '45px', textAlign: 'right' }}>
                                                 {item.percentual}%
                                             </span>
-                                        {/* Barrinha de Progresso */}
                                         <div style={{ width: '80px', height: '12px', backgroundColor: '#f1f5f9', borderRadius: '2px', overflow: 'hidden' }}>
                                             <div style={{ width: `${item.percentual}%`, height: '100%', backgroundColor: '#dc2626' }} />
                                         </div>
