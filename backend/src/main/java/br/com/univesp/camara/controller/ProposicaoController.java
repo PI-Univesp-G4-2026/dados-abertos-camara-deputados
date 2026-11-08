@@ -33,24 +33,19 @@ public class ProposicaoController {
     @GetMapping
     public Page<ProposicaoDto> listar(@RequestParam(required = false) Integer ano,
                                       @RequestParam(required = false) String tipo,
+                                      @RequestParam(required = false) String termo, // <-- ADICIONADO AQUI
                                       @RequestParam(defaultValue = "0") int page,
                                       @RequestParam(defaultValue = "20") int size) {
+
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(Math.min(size, 100), 1), Sort.by("id").descending());
         String sigla = (tipo != null && !tipo.isBlank()) ? tipo.trim().toUpperCase(Locale.ROOT) : null;
+        String busca = (termo != null && !termo.isBlank()) ? termo.trim() : null;
 
-        if (ano != null && sigla != null) {
-            return proposicaoRepo.findByAnoAndSiglaTipo(ano, sigla, pageable).map(ProposicaoDto::from);
-        }
+        // Log para você conseguir ver no Render que o dado chegou
+        System.out.println(">>> FILTRO RECEBIDO: ano=" + ano + ", tipo=" + sigla + ", termo=" + busca);
 
-        if (sigla != null) {
-            return proposicaoRepo.findBySiglaTipo(sigla, pageable).map(ProposicaoDto::from);
-        }
-
-        if (ano != null) {
-            return proposicaoRepo.findByAno(ano, pageable).map(ProposicaoDto::from);
-        }
-
-        return proposicaoRepo.findByDadosCarregadosTrue(pageable).map(ProposicaoDto::from);
+        // Agora ele usa o método único que criamos
+        return proposicaoRepo.buscarComFiltros(ano, sigla, busca, pageable).map(ProposicaoDto::from);
     }
 
     @GetMapping("/{id}")
