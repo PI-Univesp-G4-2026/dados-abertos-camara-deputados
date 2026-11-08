@@ -33,3 +33,6 @@ export const listarPartidos = () =>
 
 export const obterEstatisticasPartidos = () =>
     api.get('/partidos/estatisticas').then(r => r.data)
+
+export const obterDetalheProposicao = (proposicaoId) =>
+    api.get(`/proposicoes/${proposicaoId}`).then(r => r.data)

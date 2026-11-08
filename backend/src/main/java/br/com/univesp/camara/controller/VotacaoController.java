@@ -101,11 +101,13 @@ public class VotacaoController {
 
     private String orientacaoPartido(List<OrientacaoDto> orientacoes, String siglaPartido) {
         if (siglaPartido == null) return null;
-        return orientacoes.stream().filter(o -> o.siglaPartidoBloco() != null && o.siglaPartidoBloco().equalsIgnoreCase(siglaPartido))
+        return orientacoes.stream()
+                // Agora ele verifica se o bloco contém a sigla (ex: "Fdr PSOL-REDE" contém "PSOL")
+                .filter(o -> o.siglaPartidoBloco() != null && o.siglaPartidoBloco().toUpperCase().contains(siglaPartido.toUpperCase()))
                 .map(OrientacaoDto::orientacaoVoto)
                 .filter(Objects::nonNull)
                 .findFirst()
-                .orElse(null);
+                .orElse("Liberado"); // Se não achar nada, assume que estava liberado
     }
 }
 
