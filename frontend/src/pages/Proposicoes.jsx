@@ -9,19 +9,30 @@ export default function Proposicoes() {
 
     // Filtros
     const [ano, setAno] = useState(2026)
-    const [tipo, setTipo] = useState('') // Vazio significa todos (PL e PEC)
+    const [tipo, setTipo] = useState('')
+    const [termo, setTermo] = useState('')
+    const [termoDebounced, setTermoDebounced] = useState('') // Para evitar requisições a cada tecla
 
     // Paginação
     const [page, setPage] = useState(0)
     const [hasMore, setHasMore] = useState(true)
     const [totalElements, setTotalElements] = useState(0)
 
+    // Efeito de Debounce para o termo de busca
     useEffect(() => {
-        // Sempre que o filtro muda, reseta a paginação e busca a página 0
+        const handler = setTimeout(() => {
+            setTermoDebounced(termo);
+        }, 500); // 500ms de espera
+
+        return () => clearTimeout(handler);
+    }, [termo]);
+
+    // Sempre que um filtro (debounced) mudar, reseta a paginação e busca
+    useEffect(() => {
         setPage(0)
         setHasMore(true)
         carregar(0, false)
-    }, [ano, tipo])
+    }, [ano, tipo, termoDebounced])
 
     async function carregar(paginaAtual, acumular = false) {
         setLoading(true)
@@ -29,7 +40,8 @@ export default function Proposicoes() {
         try {
             const data = await listarProposicoes({
                 ano,
-                tipo: tipo || undefined, // Envia undefined para o backend ignorar
+                tipo: tipo || undefined,
+                termo: termoDebounced || undefined,
                 page: paginaAtual,
                 size: 20
             })
@@ -55,7 +67,6 @@ export default function Proposicoes() {
         carregar(nextPage, true)
     }
 
-    // Função para limitar o tamanho da ementa na tela
     const truncarEmenta = (texto, limite = 150) => {
         if (!texto) return 'Sem ementa registrada.';
         if (texto.length <= limite) return texto;
@@ -73,7 +84,8 @@ export default function Proposicoes() {
                 <span style={{ color: '#475569', fontSize: '0.9rem' }}>Total encontrado: <strong>{totalElements}</strong></span>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            {/* BARRA DE FILTROS */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'flex-end', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div>
                     <label htmlFor="filtro-tipo" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Tipo</label>
                     <select id="filtro-tipo" value={tipo} onChange={e => setTipo(e.target.value)} style={{ padding: '0.55rem' }}>
@@ -88,13 +100,24 @@ export default function Proposicoes() {
                         {[2026, 2025, 2024, 2023].map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
                 </div>
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                    <label htmlFor="filtro-termo" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Buscar na Ementa</label>
+                    <input
+                        id="filtro-termo"
+                        type="text"
+                        placeholder="Ex: escala 6x1, animais, tributação..."
+                        value={termo}
+                        onChange={e => setTermo(e.target.value)}
+                        style={{ padding: '0.55rem', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                    />
+                </div>
             </div>
 
             {erro && <p role="alert" style={{ color: '#dc2626', padding: '1rem', background: '#fee2e2', borderRadius: '4px' }}>{erro}</p>}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {proposicoes.map(prop => (
-                    <div key={prop.id} style={{ padding: '1.5rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <div key={prop.id} style={{ padding: '1.5rem', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                             <h3 style={{ margin: 0, color: '#1e293b' }}>
                                 {prop.siglaTipo} {prop.numero}/{prop.ano}
@@ -132,7 +155,7 @@ export default function Proposicoes() {
                 )}
 
                 {!loading && proposicoes.length === 0 && !erro && (
-                    <p style={{ color: '#64748b' }}>Nenhuma proposição encontrada para este filtro. (Talvez o ETL ainda não tenha sido rodado no Render).</p>
+                    <p style={{ color: '#64748b' }}>Nenhuma proposição encontrada para estes filtros.</p>
                 )}
             </div>
         </main>

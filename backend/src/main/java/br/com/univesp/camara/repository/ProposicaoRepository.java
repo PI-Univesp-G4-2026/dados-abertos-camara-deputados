@@ -37,4 +37,13 @@ public interface ProposicaoRepository extends JpaRepository<Proposicao, Long> {
     @Modifying
     @Query("UPDATE Proposicao p SET p.autoresCarregados = true WHERE p.id = :id")
     void marcarAutoresCarregados(@Param("id") Long id);
+
+    @Query("SELECT p FROM Proposicao p WHERE p.dadosCarregados = true " +
+            "AND (:ano IS NULL OR p.ano = :ano) " +
+            "AND (:tipo IS NULL OR :tipo = '' OR p.siglaTipo = :tipo) " +
+            "AND (:termo IS NULL OR :termo = '' OR LOWER(p.ementa) LIKE LOWER(CONCAT('%', :termo, '%')))")
+    Page<Proposicao> buscarComFiltros(@Param("ano") Integer ano,
+                                      @Param("tipo") String tipo,
+                                      @Param("termo") String termo,
+                                      Pageable pageable);
 }
