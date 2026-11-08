@@ -3,6 +3,7 @@ import ListaDeputados from './pages/ListaDeputados'
 import FichaDeputado from './pages/FichaDeputado'
 import DashboardPartidos from './pages/DashboardPartidos'
 import Proposicoes from './pages/Proposicoes'
+import Votacoes from './pages/Votacoes'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
             <Route path="/deputados/:id" element={<FichaDeputado />} />
             <Route path="/partidos" element={<DashboardPartidos />} />
             <Route path="/proposicoes" element={<Proposicoes />} />
+            <Route path="/votacoes" element={<Votacoes />} />
           </Routes>
         </div>
       </BrowserRouter>

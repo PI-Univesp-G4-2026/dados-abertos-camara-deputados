@@ -109,5 +109,14 @@ public class VotacaoController {
                 .findFirst()
                 .orElse("Liberado"); // Se não achar nada, assume que estava liberado
     }
+
+    @GetMapping("/pec-pl")
+    public Page<VotacaoDto> listarPecPl(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        var pageable = PageRequest.of(page, Math.min(size, 100), Sort.by("dataHoraRegistro").descending());
+        return votacaoRepo.findPecPl(pageable).map(VotacaoDto::from);
+    }
 }
 

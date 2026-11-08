@@ -39,3 +39,10 @@ export const obterDetalheProposicao = (proposicaoId) =>
 
 export const listarProposicoes = (params) =>
     api.get('/proposicoes', { params }).then(r => r.data)
+
+// --- VOTAÇÕES GERAIS ---
+export const listarVotacoesPecPl = (params) =>
+    api.get('/votacoes/pec-pl', { params }).then(r => r.data)
+
+export const obterDetalheVotacao = (id) =>
+    api.get(`/votacoes/${id}`).then(r => r.data)
