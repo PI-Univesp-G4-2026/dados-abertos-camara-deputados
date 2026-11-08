@@ -125,7 +125,23 @@ public class CamaraClient {
 
         String uriProp = textOrNull(d, "uriProposicaoObjeto");
         votacao.setUriProposicaoObjeto(uriProp);
-        votacao.setProposicaoId(uriProp != null ? Long.valueOf(uriProp.substring(uriProp.lastIndexOf('/') + 1)) : null);
+
+        Long propId = null;
+        if (uriProp != null) {
+            // Tenta pegar pelo campo padrão (uriProposicaoObjeto)
+            propId = Long.valueOf(uriProp.substring(uriProp.lastIndexOf('/') + 1));
+        } else {
+            // Se não tiver, tenta pegar pelo array proposicoesAfetadas
+            JsonNode afetadas = d.get("proposicoesAfetadas");
+            if (afetadas != null && afetadas.isArray() && !afetadas.isEmpty()) {
+                JsonNode primeira = afetadas.get(0);
+                if (primeira.hasNonNull("id")) {
+                    propId = primeira.get("id").asLong();
+                }
+            }
+        }
+        votacao.setProposicaoId(propId);
+
         votacao.setProposicaoObjeto(d.path("proposicaoObjeto").asText(null));
         return votacao;
     }
