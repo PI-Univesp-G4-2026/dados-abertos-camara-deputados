@@ -52,4 +52,9 @@ public interface VotacaoRepository extends JpaRepository<Votacao, String> {
 
     @Query("SELECT v FROM Votacao v JOIN Proposicao p ON v.proposicaoId = p.id WHERE p.codTipo IN (136, 139)")
     Page<Votacao> findPecPl(Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Votacao v SET v.votosCarregados = false WHERE v.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.codTipo IN (136, 139))")
+    void resetarVotosCarregadosPecPl();
 }

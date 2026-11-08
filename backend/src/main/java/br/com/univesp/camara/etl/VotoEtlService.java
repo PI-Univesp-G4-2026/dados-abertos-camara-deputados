@@ -71,8 +71,11 @@ public class VotoEtlService {
         List<Voto> votos = new ArrayList<>();
         int ignorados = 0;
 
-        for (CamaraClient.VotoApi v : votoApis) {
+        if (votoApis == null) {
+            return new ResultadoVoto(0, 0);
+        }
 
+        for (CamaraClient.VotoApi v : votoApis) {
             if (!idsDeputados.contains(v.deputadoId())) {
                 ignorados++;
                 continue;
@@ -86,15 +89,16 @@ public class VotoEtlService {
             votos.add(voto);
         }
 
-        votoRepo.saveAll(votos);
-        votacao.setVotosCarregados(true);
-        votacaoRepo.save(votacao);
-
-        tx.executeWithoutResult(status -> {
+        // --- REDE DE SEGURANÇA ---
+        // Só apaga e salva se tivermos certeza que a API retornou votos.
+        if (!votos.isEmpty()) {
             votoRepo.deleteByVotacaoId(votacao.getId());
             votoRepo.saveAll(votos);
             votacaoRepo.marcarVotosCarregados(votacao.getId());
-        });
+        } else {
+            System.out.println(">>> AVISO: API retornou 0 votos para " + votacao.getId() + ". Mantendo os votos antigos intactos.");
+        }
+
         return new ResultadoVoto(votos.size(), ignorados);
     }
 

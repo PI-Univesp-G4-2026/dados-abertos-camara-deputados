@@ -33,20 +33,17 @@ public class AdminController {
     private final LegislaturaEtlService legislaturaEtlService;
     private final PartidoEtlService partidoEtlService;
     private final ProposicaoEtlService proposicaoEtlService;
-
-    // NOVAS DEPENDÊNCIAS INJETADAS
     private final ProposicaoRepository proposicaoRepo;
     private final VotacaoRepository votacaoRepo;
     private final OrientacaoBancadaRepository orientacaoRepo;
 
-    // CONSTRUTOR ATUALIZADO COM OS SERVIÇOS DO MERGE
     public AdminController(EtlService etlService,
                            CamaraClient camaraClient,
                            VotacaoEtlService votacaoEtlService,
                            VotoEtlService votoEtlService,
                            TemaEtlService temaEtlService,
-                           LegislaturaEtlService legislaturaEtlService, // <--- ADICIONADO
-                           PartidoEtlService partidoEtlService, ProposicaoEtlService proposicaoEtlService,         // <--- ADICIONADO
+                           LegislaturaEtlService legislaturaEtlService,
+                           PartidoEtlService partidoEtlService, ProposicaoEtlService proposicaoEtlService,
                            ProposicaoRepository proposicaoRepo,
                            VotacaoRepository votacaoRepo,
                            OrientacaoBancadaRepository orientacaoRepo) {
@@ -55,8 +52,8 @@ public class AdminController {
         this.votacaoEtlService = votacaoEtlService;
         this.votoEtlService = votoEtlService;
         this.temaEtlService = temaEtlService;
-        this.legislaturaEtlService = legislaturaEtlService; // <--- INICIALIZADO
-        this.partidoEtlService = partidoEtlService;         // <--- INICIALIZADO
+        this.legislaturaEtlService = legislaturaEtlService;
+        this.partidoEtlService = partidoEtlService;
         this.proposicaoEtlService = proposicaoEtlService;
         this.proposicaoRepo = proposicaoRepo;
         this.votacaoRepo = votacaoRepo;
@@ -173,7 +170,6 @@ public class AdminController {
                 "mensagem", "Sincronização de deputados, votações, votos e despesas iniciada. Acompanhe pelo log."));
     }
 
-    // --- NOVOS ENDPOINTS DO RAIO-X ---
 
     @PostMapping("/etl/proposicao/{id}")
     public ResponseEntity<Map<String, Object>> sincronizarProposicao(@PathVariable Long id) {
@@ -199,5 +195,11 @@ public class AdminController {
                 "ano", ano,
                 "mensagem", "Sincronização de PECs e PLs concluída."
         ));
+    }
+
+    @PostMapping("/etl/votos/reset")
+    public ResponseEntity<Map<String, Object>> resetarVotos() {
+        votacaoRepo.resetarVotosCarregadosPecPl();
+        return ResponseEntity.ok(Map.of("status", "ok", "mensagem", "Votações de PEC/PL marcadas para reprocessamento."));
     }
 }
