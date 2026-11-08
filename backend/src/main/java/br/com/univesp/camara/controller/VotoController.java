@@ -39,7 +39,8 @@ public class VotoController {
                 Math.max(Math.min(size, 100), 1),
                 Sort.by("votacao.dataHoraRegistro").descending());
 
-        return votoRepo.buscarComFiltros(deputadoId, dataInicio, dataFim, descricao, tipo, pageable)
+        // Usa o novo método filtrado
+        return votoRepo.buscarComFiltrosPecPl(deputadoId, dataInicio, dataFim, descricao, tipo, pageable)
                 .map(VotoDeputadoDto::from);
     }
 

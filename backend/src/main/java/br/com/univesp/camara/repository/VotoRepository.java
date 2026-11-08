@@ -50,4 +50,18 @@ public interface VotoRepository extends JpaRepository<Voto, Long> {
                                 @Param("descricao") String descricao,
                                 @Param("tipo") String tipo,
                                 Pageable pageable);
+
+    @Query("SELECT v FROM Voto v JOIN v.votacao vt " +
+            "WHERE v.deputado.id = :deputadoId " +
+            "AND vt.proposicaoId IN (SELECT p.id FROM Proposicao p WHERE p.codTipo IN (136, 139)) " +
+            "AND (:dataInicio IS NULL OR vt.data >= :dataInicio) " +
+            "AND (:dataFim IS NULL OR vt.data <= :dataFim) " +
+            "AND (:descricao IS NULL OR :descricao = '' OR LOWER(vt.descricao) LIKE LOWER(CONCAT('%', :descricao, '%'))) " +
+            "AND (:tipo IS NULL OR :tipo = '' OR vt.proposicaoId IN (SELECT p2.id FROM Proposicao p2 WHERE p2.siglaTipo = :tipo))")
+    Page<Voto> buscarComFiltrosPecPl(@Param("deputadoId") Long deputadoId,
+                                     @Param("dataInicio") LocalDate dataInicio,
+                                     @Param("dataFim") LocalDate dataFim,
+                                     @Param("descricao") String descricao,
+                                     @Param("tipo") String tipo,
+                                     Pageable pageable);
 }
