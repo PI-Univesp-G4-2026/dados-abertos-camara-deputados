@@ -60,6 +60,7 @@ public class VotoEtlService {
         System.out.println(">>> ETL: " + votosSalvos + " votos salvos, " + ignorados + " ignorados");
     }
 
+    @Transactional
     public ResultadoVoto sincronizarVotacao(String votacaoId) {
         Votacao votacao = votacaoRepo.findById(votacaoId)
                 .orElseThrow(() -> new IllegalArgumentException("Votação não encontrada: " + votacaoId));
@@ -89,8 +90,6 @@ public class VotoEtlService {
             votos.add(voto);
         }
 
-        // --- REDE DE SEGURANÇA ---
-        // Só apaga e salva se tivermos certeza que a API retornou votos.
         if (!votos.isEmpty()) {
             votoRepo.deleteByVotacaoId(votacao.getId());
             votoRepo.saveAll(votos);
