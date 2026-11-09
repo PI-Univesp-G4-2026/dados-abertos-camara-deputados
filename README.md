@@ -1,87 +1,90 @@
 # 🏛️ Transparência Legislativa - Atuação Parlamentar
 
-![Badge Status](https://img.shields.io/badge/Status-Em_Desenvolvimento-green)
+![Badge Status](https://img.shields.io/badge/Status-Concluído-green)
 ![Badge Java](https://img.shields.io/badge/Java-21-orange)
 ![Badge Spring](https://img.shields.io/badge/Spring_Boot-3.3.5-brightgreen)
 ![Badge React](https://img.shields.io/badge/React-19-blue)
 ![Badge PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
 ![Badge Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
 
-Plataforma web desenvolvida para monitorar, de forma centralizada e acessível, a atuação parlamentar dos deputados federais, consumindo dados abertos diretamente da **API da Câmara dos Deputados**.
+Plataforma web desenvolvida para monitorar, de forma centralizada, acessível e interativa, a atuação parlamentar dos deputados federais, consumindo dados abertos diretamente da **API da Câmara dos Deputados**.
 
 Este projeto foi desenvolvido como parte do **Projeto Integrador II** da UNIVESP, pelo **Grupo 20** — 2026/2.
 
 ## 🌐 Acesso em Produção
-- **Frontend (Vercel):** [https://dados-abertos-camara-deputados.vercel.app)
+- **Frontend (Vercel):** [https://dados-abertos-camara-deputados.vercel.app](https://dados-abertos-camara-deputados.vercel.app)
 - **API (Render):** [https://camara-api.onrender.com/api/deputados](https://camara-api.onrender.com/api/deputados)
+
 ---
 
 ## 🎯 Objetivo
 
-Desenvolver um software web *Full Stack* que promova o controle social e a transparência pública, superando a fragmentação e complexidade dos dados brutos oficiais. O sistema armazena informações localmente para garantir performance, apresenta os dados de forma visual e acessível, e conta com cobertura de testes e integração contínua.
+Desenvolver um software web *Full Stack* que promova o controle social e a transparência pública, superando a fragmentação e complexidade dos dados brutos oficiais. O sistema armazena informações localmente para garantir performance, apresenta os dados de forma visual e acessível, e conta com testes automatizados e deploy contínuo.
 
-## 🚀 Funcionalidades (MVP)
+## 🚀 Funcionalidades Principais
 
-- **Sincronização de Dados:** Consumo em *background* da [API de Dados Abertos da Câmara](https://dadosabertos.camara.leg.br/) para alimentar o banco de dados interno.
-- **Listagem de Deputados:** Busca e filtro por nome, com paginação.
-- **Ficha do Parlamentar:** Visualização detalhada com foto, partido, UF e e-mail.
-- **Análise de Despesas:** Gráficos interativos de gastos da Cota Parlamentar (CEAP) por tipo de despesa e evolução mensal.
-- **ETL Automatizado:** Sincronização periódica (diária às 3h) e manual via endpoint administrativo.
-- **Cache Local:** Redução do número de requisições à API pública, melhorando a velocidade da aplicação e evitando *rate limits*.
-- **Acessibilidade:** Estrutura semântica HTML, atributos ARIA, skip-link e navegação por teclado.
+- **Listagem de Deputados:** Busca por nome, paginação infinita e filtros (Ativos, Inativos, Todos).
+- **Ficha do Parlamentar:** Dados básicos, gráficos de despesas (por categoria e evolução mensal), gráfico de pizza de votos e histórico completo de votos com filtros por data, tipo e texto.
+- **Raio-X da Votação (Diferencial):** Exibe a Ementa, autores e o alinhamento partidário (voto do deputado vs. orientação do partido) de forma integrada.
+- **Painel de Votações:** Lista as principais proposições votadas em plenário (PL, PEC, PLP, PDC), com filtros, busca textual e placar geral (Sim, Não, Abstenções).
+- **Painel de Proposições:** Busca textual na ementa, filtros por ano e tipo (PL, PEC, PLP, PDC) com links diretos para a Câmara.
+- **Painel de Temas:** Agrupamento de votações e proposições por áreas temáticas (Economia, Saúde, Meio Ambiente, etc).
+- **Painel de Partidos:** Infográfico interativo mostrando a distribuição de deputados em exercício por partido político.
+- **ETL Resiliente:** Pipeline de sincronização mês a mês (com *retry* e tratamento de votações simbólicas) que evita sobrecarga da API pública.
+- **Acessibilidade:** Estrutura semântica HTML, atributos ARIA, skip-link, navegação por teclado e alto contraste.
 
 ## 🛠️ Tecnologias Utilizadas
 
 ### Back-end
 - **Java 21** (LTS)
-- **Spring Boot 3.3.5** (Web, Data JPA, Validation, Actuator)
+- **Spring Boot 3.3.5** (Web, Data JPA, Validation)
 - **Spring Data JPA + Hibernate** para mapeamento objeto-relacional
 - **Flyway** para versionamento de schema
 - **Maven** para gerenciamento de dependências
 - **Lombok** para redução de boilerplate
-- **JUnit 5 & Mockito** para testes (a implementar)
 
 ### Banco de Dados
-- **PostgreSQL 16** via **Docker Compose**
-- Modelagem relacional: `deputados`, `despesas`
+- **PostgreSQL 16** (Hospedado no Render)
+- Modelagem relacional completa: `deputados`, `despesas`, `votacoes`, `votos`, `proposicoes`, `temas`, `partidos`, `legislaturas`, entre outras.
 
 ### Front-end
 - **React 19** com **Vite**
 - **React Router** para roteamento
 - **Axios** para consumo da API interna
-- **Recharts** para a plotagem dos gráficos
-- **ESLint + eslint-plugin-jsx-a11y** para acessibilidade
+- **Recharts** para a plotagem dos gráficos interativos
+- **ESLint + eslint-plugin-jsx-a11y** para garantir acessibilidade
 
 ### Infraestrutura & DevOps
 - **Git & GitHub** para controle de versão
-- **Docker & Docker Compose** para ambiente local
-- **Nuvem:** preparado para *deploy* em **Vercel** (frontend) e **Digital Ocean / AWS / GCP** (backend + banco)
+- **Docker & Docker Compose** para ambiente local (PostgreSQL)
+- **Deploy:** Vercel (Frontend) e Render (Backend + Banco de Dados)
 
 ---
 
-## ⚙️ Arquitetura do Sistema
+## 🔄 Pipeline de ETL (Extract, Transform, Load)
 
-1. O **Back-end (Spring Boot)** realiza *requests* programados à API da Câmara (ETL) e persiste os dados no **PostgreSQL** via Spring Data JPA.
-2. O Back-end expõe uma **REST API própria**, com paginação e endpoints agregados para o front-end.
-3. O **Front-end (React)** consome esta API interna e renderiza a interface para o usuário final.
-4. Gráficos interativos são gerados com **Recharts** a partir dos dados agregados.
+O projeto possui rotinas de ETL que sincronizam os dados da API da Câmara para o banco local, minimizando a dependência de rede em tempo real.
 
+- **Extract:** Requisições paginadas à API (`/deputados`, `/despesas`, `/votacoes`, `/votos`, `/proposicoes`, `/partidos`, `/legislaturas`).
+- **Transform:** Mapeamento JSON → Entidades JPA, deduplicação, tratamento de datas nulas e votações simbólicas.
+- **Load:** Persistência no PostgreSQL (`saveAll` / *Upsert*).
+
+**Resiliência:** O ETL processa dados em janelas (ex: mês a mês) para evitar *timeouts* (erro 504) e possui *retry* automático.
+**Agendamento:** `@Scheduled` (diário) e endpoints manuais via `/api/admin/etl/*`.
 
 ---
 
 ## 📦 Como rodar o projeto localmente
 
 ### Pré-requisitos
-
 - [JDK 21](https://adoptium.net/)
 - [Node.js 20+](https://nodejs.org/) e npm
 - [Docker](https://docs.docker.com/engine/install/) e [Docker Compose](https://docs.docker.com/compose/install/)
 - Git
 
 ### 1. Clonar o repositório
-
 ```bash
-git clone https://github.com/cayopereira/dados-abertos-camara-deputados.git
+git clone https://github.com/PI-Univesp-G4-2026/dados-abertos-camara-deputados.git
 cd dados-abertos-camara-deputados
 ```
 
@@ -105,9 +108,7 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-Na primeira execução, o Flyway roda as migrations e o CommandLineRunner sincroniza automaticamente os ~648 deputados da legislatura atual.
-
-A API estará disponível em http://localhost:8080
+A API estará disponível em http://localhost:8080. O Flyway rodará as migrations e o ETL inicial será disparado.
 
 ### 4. Subir o front-end
 
@@ -125,44 +126,29 @@ Acesse: http://localhost:5173
 
 ```text
 dados-abertos-camara-deputados/
-├── backend/                          # Spring Boot
+├── backend/                          # Spring Boot API
 │   ├── src/main/java/br/com/univesp/camara/
-│   │   ├── CamaraApplication.java
-│   │   ├── client/                   # Consumo da API da Câmara
-│   │   ├── controller/               # Endpoints REST
+│   │   ├── client/                   # Consumo da API externa (CamaraClient)
+│   │   ├── controller/               # Endpoints REST (Deputados, Votações, Temas...)
 │   │   ├── dto/                      # Data Transfer Objects
-│   │   ├── etl/                      # Pipeline ETL
+│   │   ├── etl/                      # Serviços de Extração e Carga
 │   │   ├── model/                    # Entidades JPA
-│   │   └── repository/               # Spring Data JPA
+│   │   └── repository/               # Interfaces Spring Data JPA
 │   ├── src/main/resources/
 │   │   ├── application.yml
-│   │   └── db/migration/             # Flyway (V1, V2, V3)
+│   │   └── db/migration/             # Scripts Flyway (V1 até V21)
 │   └── pom.xml
 ├── frontend/                         # React + Vite
 │   ├── src/
-│   │   ├── pages/                    # ListaDeputados, FichaDeputado
+│   │   ├── pages/                    # ListaDeputados, FichaDeputado, Votacoes, Temas...
 │   │   ├── services/                 # api.js (Axios)
 │   │   ├── App.jsx
 │   │   └── main.jsx
 │   └── package.json
-├── docker-compose.yml                # PostgreSQL 16
+├── docker-compose.yml                # PostgreSQL local
 ├── .gitignore
 └── README.md
 ```
-
-## 🔄 ETL (Extract, Transform, Load)
-
-O projeto possui um pipeline de ETL que sincroniza os dados da API da Câmara para o banco local.
-
-- Extract: requisições paginadas à API (/deputados e /deputados/{id}/despesas)
-
-- Transform: mapeamento JSON → entidades JPA, deduplicação
-
-- Load: persistência no PostgreSQL
-
-Agendamento: `@Scheduled(cron = "0 0 3 * * *")` — todos os dias às 3h da manhã.
-
-Sincronização manual: via endpoints `/api/admin/etl/*`.
 
 ## 👥 Integrantes do Grupo 20
 
